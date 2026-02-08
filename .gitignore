@@ -1,1 +1,13 @@
+# --- Python & Backend ---
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+backend/.venv/
+
+# --- Environment Variables (Security) ---
 .env
+backend/.env
+
+# --- IDE Settings (Optional but recommended) ---
+.vscode/
