@@ -5,6 +5,7 @@ This module implements the HTTP endpoints for appointment management:
 - POST /api/v1/appointments: Create a new appointment
 - GET /api/v1/appointments: List appointments with filters (status, from_date, to_date)
 - PATCH /api/v1/appointments/{appointment_id}/status: Update appointment status (admin only)
+- PATCH /api/v1/appointments/{appointment_id}/reschedule: Reschedule an appointment
 - DELETE /api/v1/appointments/{appointment_id}: Cancel/delete an appointment
 
 All endpoints require authentication. Pet owners can only access appointments for
@@ -25,6 +26,7 @@ from app.features.users.models import User
 from app.features.appointments.schemas import (
     AppointmentCreateRequest,
     AppointmentUpdateStatusRequest,
+    AppointmentReschedule,
     AppointmentResponse
 )
 from app.features.appointments.repository import AppointmentRepository
@@ -195,6 +197,154 @@ def update_appointment_status(
         appointment_id=appointment_id,
         new_status=request.status,
         current_user=current_user
+    )
+    
+    session.commit()
+    return AppointmentResponse.model_validate(appointment)
+
+
+@router.patch("/{appointment_id}/reschedule", response_model=AppointmentResponse)
+def reschedule_appointment(
+    appointment_id: uuid.UUID,
+    reschedule_data: AppointmentReschedule,
+    current_user: User = Depends(get_current_user),
+    session: Session = Depends(get_session)
+) -> AppointmentResponse:
+    """
+    Reschedule an appointment to a new time slot.
+    
+    Allows pet owners to reschedule appointments for their own pets to a different date
+    and time. The endpoint performs comprehensive validation to ensure the new time slot
+    is valid, available, and within clinic operating hours. Only appointments in
+    'scheduled' or 'confirmed' status can be rescheduled.
+    
+    **Process:**
+    1. Authenticates the user via JWT token (get_current_user dependency)
+    2. Validates the user owns the pet associated with the appointment
+    3. Verifies the appointment status is 'scheduled' or 'confirmed'
+    4. Validates the new time range (end_time must be after start_time)
+    5. Checks that the clinic is open during the requested time
+    6. Verifies the new time slot doesn't conflict with existing appointments
+    7. Updates the appointment's start_time and end_time
+    8. Updates the appointment's updated_at timestamp
+    9. Returns the updated appointment
+    
+    **Parameters:**
+    - **appointment_id** (path): UUID of the appointment to reschedule
+    - **Authorization header**: Required. Must contain a valid Bearer token
+      - Format: `Authorization: Bearer <token>`
+    
+    **Request Body:**
+    ```json
+    {
+        "start_time": "2024-02-15T14:00:00Z",
+        "end_time": "2024-02-15T15:00:00Z"
+    }
+    ```
+    
+    **Request Fields:**
+    - **start_time** (required): New start time for the appointment
+      - Must be a valid ISO 8601 datetime
+      - Must be in the future
+      - Must fall within clinic operating hours
+    - **end_time** (required): New end time for the appointment
+      - Must be a valid ISO 8601 datetime
+      - Must be after start_time
+      - Must fall within clinic operating hours
+    
+    **Response Format:**
+    ```json
+    {
+        "id": "uuid-string",
+        "pet_id": "uuid-string",
+        "start_time": "2024-02-15T14:00:00Z",
+        "end_time": "2024-02-15T15:00:00Z",
+        "service_type": "checkup",
+        "status": "scheduled",
+        "notes": "Annual checkup",
+        "created_at": "2024-01-15T10:30:00Z",
+        "updated_at": "2024-01-20T16:45:00Z"
+    }
+    ```
+    
+    **Error Responses:**
+    - **401 Unauthorized**: 
+      - Token is invalid, expired, or missing
+      - Token has been blacklisted (user logged out)
+      - Message: "Invalid or expired token" or "Token has been invalidated"
+    - **403 Forbidden**: 
+      - User doesn't own the pet associated with the appointment
+      - Message: "You can only reschedule appointments for your own pets"
+    - **404 Not Found**: 
+      - Appointment with the given ID doesn't exist
+      - Message: "Appointment not found"
+    - **409 Conflict**: 
+      - New time slot conflicts with an existing appointment (double booking)
+      - Message: "The requested time slot is not available"
+    - **422 Unprocessable Entity**: 
+      - Validation fails for the request data
+      - Messages:
+        - "End time must be after start time"
+        - "Clinic is closed during the requested time"
+        - "Cannot reschedule completed or cancelled appointments"
+        - "Appointment status must be 'scheduled' or 'confirmed'"
+        - "Start time must be in the future"
+    
+    **Validation Rules:**
+    - **Ownership**: User must own the pet associated with the appointment
+    - **Status**: Appointment must be in 'scheduled' or 'confirmed' status
+    - **Time Range**: end_time must be after start_time
+    - **Clinic Hours**: Both start_time and end_time must fall within clinic operating hours
+    - **Availability**: New time slot must not overlap with existing appointments
+    - **Future Time**: start_time must be in the future
+    
+    **Example Usage:**
+    ```bash
+    curl -X PATCH "http://localhost:8000/api/v1/appointments/123e4567-e89b-12d3-a456-426614174000/reschedule" \
+         -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." \
+         -H "Content-Type: application/json" \
+         -d '{
+           "start_time": "2024-02-15T14:00:00Z",
+           "end_time": "2024-02-15T15:00:00Z"
+         }'
+    ```
+    
+    **Requirements Satisfied:**
+    - **Requirement 6.1**: Validate user owns the pet associated with the appointment
+    - **Requirement 6.2**: Require both new start time and end time
+    - **Requirement 6.3**: Validate new time slot does not conflict with existing appointments
+    - **Requirement 6.4**: Check that clinic is open during the requested time
+    - **Requirement 6.5**: Update appointment's start time and end time
+    - **Requirement 6.6**: Reject reschedule requests that would create double booking
+    - **Requirement 6.7**: Update appointment's updated_at timestamp
+    - **Requirement 6.8**: Allow rescheduling only for appointments with status "scheduled" or "confirmed"
+    - **Requirement 6.9**: Reject attempts to reschedule completed or cancelled appointments
+    
+    **Security Notes:**
+    - Pet owners can only reschedule appointments for their own pets
+    - Admin users can reschedule any appointment
+    - All validation is performed before any database updates
+    - The updated_at timestamp is automatically updated on successful reschedule
+    
+    **Business Rules:**
+    - Completed appointments cannot be rescheduled
+    - Cancelled appointments cannot be rescheduled
+    - The new time slot must not create a double booking
+    - The clinic must be open during the entire duration of the new time slot
+    """
+    appointment_repo = AppointmentRepository(session)
+    pet_repo = PetRepository(session)
+    clinic_status_repo = ClinicStatusRepository(session)
+    
+    appointment_service = AppointmentService(
+        appointment_repo, pet_repo, clinic_status_repo
+    )
+    
+    appointment = appointment_service.reschedule_appointment(
+        appointment_id=appointment_id,
+        user_id=current_user.id,
+        new_start=reschedule_data.start_time,
+        new_end=reschedule_data.end_time
     )
     
     session.commit()

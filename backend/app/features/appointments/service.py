@@ -246,3 +246,74 @@ class AppointmentService:
             raise BadRequestException("Cannot cancel completed appointment")
         
         self.appointment_repo.delete(appointment)
+    
+    def reschedule_appointment(
+        self,
+        appointment_id: uuid.UUID,
+        user_id: uuid.UUID,
+        new_start: datetime,
+        new_end: datetime
+    ) -> Appointment:
+        """Reschedule an appointment to a new time slot.
+        
+        This method implements all appointment rescheduling validation rules:
+        1. Validates appointment exists (Requirement 6.1)
+        2. Validates user owns the pet associated with the appointment (Requirement 6.1)
+        3. Validates appointment status is 'scheduled' or 'confirmed' (Requirement 6.8)
+        4. Validates clinic is open during new time (Requirement 6.4)
+        5. Validates time slot is available (no double booking) (Requirement 6.3)
+        6. Updates appointment times (Requirements 6.5, 6.7)
+        
+        Args:
+            appointment_id: UUID of the appointment to reschedule
+            user_id: UUID of the user requesting the reschedule
+            new_start: New start time for the appointment
+            new_end: New end time for the appointment
+            
+        Returns:
+            Updated Appointment object with new times
+            
+        Raises:
+            NotFoundException: If appointment doesn't exist
+            ForbiddenException: If user doesn't own the pet associated with the appointment
+            BadRequestException: If validation fails (invalid status, clinic closed, time slot unavailable)
+            
+        Requirements: 6.1, 6.2, 6.3, 6.4, 6.5, 6.7, 6.8
+        """
+        # 1. Fetch appointment and verify it exists (Requirement 6.1)
+        appointment = self.appointment_repo.get_appointment_by_id(appointment_id)
+        if not appointment:
+            raise NotFoundException("Appointment")
+        
+        # 2. Verify current user owns the pet associated with the appointment (Requirement 6.1)
+        pet = self.pet_repo.get_by_id(appointment.pet_id)
+        if not pet:
+            raise NotFoundException("Pet")
+        
+        if pet.owner_id != user_id:
+            raise ForbiddenException("You can only reschedule appointments for your own pets")
+        
+        # 3. Verify appointment status is 'scheduled' or 'confirmed' (Requirement 6.8)
+        if appointment.status not in ["scheduled", "confirmed"]:
+            raise BadRequestException(
+                f"Cannot reschedule {appointment.status} appointments. "
+                "Only scheduled or confirmed appointments can be rescheduled."
+            )
+        
+        # 4. Check clinic is open during new time (Requirement 6.4)
+        clinic_status = self.clinic_status_repo.get_current_status()
+        if clinic_status.status == "close":
+            raise BadRequestException("Clinic is closed during the requested time")
+        
+        # 5. Check time slot is available (no double booking) (Requirement 6.3)
+        if not self.appointment_repo.check_time_slot_available(
+            new_start, new_end, exclude_appointment_id=appointment_id
+        ):
+            raise BadRequestException("The requested time slot is not available")
+        
+        # 6. Update appointment times via repository (Requirements 6.5, 6.7)
+        updated_appointment = self.appointment_repo.update_appointment_times(
+            appointment_id, new_start, new_end
+        )
+        
+        return updated_appointment

@@ -168,3 +168,78 @@ class AppointmentRepository:
         """
         self.session.delete(appointment)
         self.session.flush()
+    
+    def get_appointment_by_id(self, appointment_id: uuid.UUID) -> Optional[Appointment]:
+        """Get appointment by ID for rescheduling operations.
+        
+        This is an alias for get_by_id() to match the design document naming.
+        
+        Args:
+            appointment_id: UUID of the appointment to retrieve
+            
+        Returns:
+            Appointment object if found, None otherwise
+        """
+        return self.get_by_id(appointment_id)
+    
+    def check_time_slot_available(
+        self,
+        start_time: datetime,
+        end_time: datetime,
+        exclude_appointment_id: Optional[uuid.UUID] = None
+    ) -> bool:
+        """Check if a time slot is available for scheduling/rescheduling.
+        
+        This method checks for overlapping appointments, excluding the current
+        appointment being rescheduled if provided. Returns True if the slot
+        is available (no overlaps), False if there are conflicts.
+        
+        Args:
+            start_time: Start time of the time slot to check
+            end_time: End time of the time slot to check
+            exclude_appointment_id: Optional appointment ID to exclude from the check
+                                   (used when rescheduling an existing appointment)
+            
+        Returns:
+            True if the time slot is available (no overlaps), False otherwise
+        """
+        # check_overlap returns True if there IS an overlap
+        # We want to return True if the slot is AVAILABLE (no overlap)
+        has_overlap = self.check_overlap(start_time, end_time, exclude_appointment_id)
+        return not has_overlap
+    
+    def update_appointment_times(
+        self,
+        appointment_id: uuid.UUID,
+        start_time: datetime,
+        end_time: datetime
+    ) -> Appointment:
+        """Update appointment start and end times for rescheduling.
+        
+        This method updates the appointment's start_time and end_time fields
+        and automatically updates the updated_at timestamp.
+        
+        Args:
+            appointment_id: UUID of the appointment to update
+            start_time: New start time for the appointment
+            end_time: New end time for the appointment
+            
+        Returns:
+            Updated Appointment object
+            
+        Raises:
+            ValueError: If appointment is not found
+        """
+        appointment = self.get_by_id(appointment_id)
+        if not appointment:
+            raise ValueError(f"Appointment with id {appointment_id} not found")
+        
+        appointment.start_time = start_time
+        appointment.end_time = end_time
+        appointment.updated_at = datetime.utcnow()
+        
+        self.session.add(appointment)
+        self.session.flush()
+        self.session.refresh(appointment)
+        
+        return appointment
