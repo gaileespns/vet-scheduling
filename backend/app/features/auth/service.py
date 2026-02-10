@@ -10,14 +10,21 @@ This service handles:
 
 import logging
 from typing import TYPE_CHECKING
+from datetime import datetime
+import uuid
 from app.features.users.repository import UserRepository
 from app.features.users.models import User
-from app.infrastructure.auth import hash_password, verify_password, create_access_token
-from app.common.exceptions import BadRequestException, UnauthorizedException, ForbiddenException
+from app.infrastructure.auth import hash_password, verify_password, create_access_token, verify_token
+from app.common.exceptions import (
+    BadRequestException, 
+    UnauthorizedException, 
+    ForbiddenException,
+    TokenBlacklistedException
+)
 from app.core import config
 
 if TYPE_CHECKING:
-    pass
+    from app.features.auth.repository import TokenBlacklistRepository
 
 # Configure logging
 logger = logging.getLogger(__name__)
@@ -31,14 +38,16 @@ class AuthService:
     including role assignment, password hashing, and JWT token generation.
     """
     
-    def __init__(self, user_repo: UserRepository):
+    def __init__(self, user_repo: UserRepository, token_blacklist_repo: "TokenBlacklistRepository" = None):
         """
         Initialize the authentication service.
         
         Args:
             user_repo: UserRepository instance for database operations
+            token_blacklist_repo: TokenBlacklistRepository instance for token blacklist operations
         """
         self.user_repo = user_repo
+        self.token_blacklist_repo = token_blacklist_repo
     
     def register(self, email: str, password: str, full_name: str) -> User:
         """
@@ -149,3 +158,83 @@ class AuthService:
         logger.info(f"Login successful for {email} (role: {user.role})")
         
         return access_token
+    
+    def logout(self, token: str, user_id: uuid.UUID) -> None:
+        """
+        Logout user by adding their token to the blacklist.
+        
+        This method:
+        1. Validates the token is currently valid
+        2. Extracts the expiration timestamp from the token
+        3. Adds the token to the blacklist with its expiration time
+        
+        Args:
+            token: The JWT token string to invalidate
+            user_id: UUID of the user logging out
+            
+        Raises:
+            UnauthorizedException: If token is invalid or expired
+            BadRequestException: If token blacklist repository is not configured
+            
+        Requirements:
+            - 1.1: Add user's current token to the Token_Blacklist
+            - 1.3: Store token value and expiration timestamp
+            - 1.4: Validate token exists and is currently valid before blacklisting
+        """
+        logger.info(f"Logout attempt for user: {user_id}")
+        
+        # Check if token blacklist repository is configured
+        if not self.token_blacklist_repo:
+            logger.error("Token blacklist repository not configured")
+            raise BadRequestException("Logout functionality not available")
+        
+        # Verify token is valid (Requirement 1.4)
+        try:
+            payload = verify_token(token)
+        except UnauthorizedException:
+            logger.warning(f"Logout failed: Invalid token for user {user_id}")
+            raise UnauthorizedException("Invalid or expired token")
+        
+        # Extract expiration timestamp from token payload
+        exp_timestamp = payload.get("exp")
+        if not exp_timestamp:
+            logger.error(f"Token missing expiration timestamp for user {user_id}")
+            raise UnauthorizedException("Invalid token: missing expiration")
+        
+        # Convert Unix timestamp to datetime
+        expires_at = datetime.utcfromtimestamp(exp_timestamp)
+        
+        # Add token to blacklist (Requirements 1.1, 1.3)
+        self.token_blacklist_repo.add_token(
+            token=token,
+            expires_at=expires_at,
+            user_id=user_id
+        )
+        
+        logger.info(f"User {user_id} logged out successfully, token blacklisted until {expires_at}")
+    
+    def verify_token_not_blacklisted(self, token: str) -> None:
+        """
+        Verify that a token is not in the blacklist.
+        
+        This method checks if the given token has been blacklisted (invalidated
+        through logout). It should be called during authentication to reject
+        blacklisted tokens.
+        
+        Args:
+            token: The JWT token string to check
+            
+        Raises:
+            TokenBlacklistedException: If token is blacklisted
+            
+        Requirements:
+            - 1.2: Reject authentication requests with blacklisted tokens
+        """
+        # Skip check if token blacklist repository is not configured
+        if not self.token_blacklist_repo:
+            return
+        
+        # Check if token is blacklisted (Requirement 1.2)
+        if self.token_blacklist_repo.is_token_blacklisted(token):
+            logger.warning("Authentication attempt with blacklisted token")
+            raise TokenBlacklistedException("Token has been invalidated")

@@ -66,3 +66,13 @@ class TokenResponse(BaseModel):
     """
     access_token: str
     token_type: str = "bearer"
+
+
+class LogoutResponse(BaseModel):
+    """
+    Response schema for successful logout.
+    
+    Attributes:
+        message: Success message confirming logout
+    """
+    message: str = "Successfully logged out"
