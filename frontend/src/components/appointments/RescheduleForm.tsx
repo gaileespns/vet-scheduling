@@ -23,6 +23,10 @@ export function RescheduleForm({ appointment, onSubmit, onCancel, isLoading, err
     start_time: format(new Date(appointment.start_time), "yyyy-MM-dd'T'HH:mm"),
     end_time: format(new Date(appointment.end_time), "yyyy-MM-dd'T'HH:mm"),
   });
+  const [dateError, setDateError] = useState<string | null>(null);
+
+  // Dynamic min for datetime-local
+  const now = new Date().toISOString().slice(0, 16);
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -49,9 +53,19 @@ export function RescheduleForm({ appointment, onSubmit, onCancel, isLoading, err
         label="New Start Time"
         type="datetime-local"
         value={formData.start_time}
-        onChange={(e) => setFormData({ ...formData, start_time: e.target.value })}
+        onChange={(e) => {
+          const val = e.target.value;
+          if (val && val < now) {
+            setDateError('Reschedule time cannot be in the past.');
+            setFormData({ ...formData, start_time: '' });
+          } else {
+            setDateError(null);
+            setFormData({ ...formData, start_time: val });
+          }
+        }}
         required
-        min={new Date().toISOString().slice(0, 16)}
+        min={now}
+        error={dateError || undefined}
       />
 
       <Input

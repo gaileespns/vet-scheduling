@@ -30,6 +30,7 @@ export function AppointmentForm({ pets, onSubmit, onCancel, error, fetchAvailabl
   const [slotsError, setSlotsError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const [dateError, setDateError] = useState<string | null>(null);
 
   // Fetch available slots when date or service type changes
   useEffect(() => {
@@ -119,7 +120,7 @@ export function AppointmentForm({ pets, onSubmit, onCancel, error, fetchAvailabl
       hour: 'numeric',
       minute: '2-digit',
       hour12: true,
-      timeZone: 'UTC',
+      timeZone: 'Asia/Manila',
     });
   };
 
@@ -162,12 +163,24 @@ export function AppointmentForm({ pets, onSubmit, onCancel, error, fetchAvailabl
         <label className="input-label">Appointment Date</label>
         <input
           type="date"
-          className="input"
+          className={`input ${dateError ? 'error' : ''}`}
           value={selectedDate}
-          onChange={(e) => setSelectedDate(e.target.value)}
+          onChange={(e) => {
+            const val = e.target.value;
+            if (val && val < today) {
+              setDateError('Appointment date cannot be in the past.');
+              setSelectedDate('');
+            } else {
+              setDateError(null);
+              setSelectedDate(val);
+            }
+          }}
           min={today}
           required
         />
+        {dateError && (
+          <p className="date-error">{dateError}</p>
+        )}
         <p style={{ fontSize: '0.75rem', color: 'var(--color-gray-500)', marginTop: '0.25rem' }}>
           Clinic hours: 8:00 AM – 8:00 PM
         </p>
