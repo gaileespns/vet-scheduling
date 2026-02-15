@@ -11,6 +11,8 @@
   --color-primary-hover: #1d4ed8;
   --color-primary-light: #93c5fd;
 
+  --accent-pink: #ec4899;
+
   --color-secondary: #e5e7eb;
   --color-secondary-hover: #d1d5db;
 
@@ -1193,4 +1195,17 @@ body {
 .danger-modal-confirm:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+}
+
+/* ===== DATE VALIDATION ERRORS ===== */
+
+.date-error {
+  font-size: 0.813rem;
+  color: var(--accent-pink);
+  margin-top: 0.25rem;
+  font-weight: 500;
+}
+
+.input-error {
+  color: var(--accent-pink);
 }
