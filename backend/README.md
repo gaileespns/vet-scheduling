@@ -21,28 +21,47 @@ The application follows a strict **three-layer architecture**:
 ## 🚀 Features
 
 ### Authentication & Authorization
-- JWT-based authentication
+- JWT-based authentication with token blacklisting
+- **Secure logout** - Invalidates tokens on logout
 - Role-based access control (Admin vs Pet Owner)
 - Automatic role assignment based on email
 - Bcrypt password hashing
+- **Background token cleanup** - Automatically removes expired tokens daily
+
+### User Profile Management
+- **View profile** - Get current user's profile information
+- **Update profile** - Modify name, email, phone, city, and preferences
+- Email uniqueness validation
+- Phone format validation
+- **User preferences** - Store custom JSON preferences per user
+- **City field** - Track user location
 
 ### Pet Management
-- Register and manage pets
+- Register and manage pets with species, breed, and notes
 - Track vaccination status (valid, expired, unknown)
 - Store medical history as JSON
+- **Enhanced pet profiles** - Species (required), breed and notes (optional)
 - Role-based filtering (owners see only their pets, admins see all)
 
 ### Appointment Booking
 - Create appointments with automatic end time calculation
 - Service types: vaccination (30min), routine (45min), surgery (120min), emergency (15min)
+- **Reschedule appointments** - Change appointment times with validation
 - Overlap detection for double-booking prevention
 - Status management: pending → confirmed → completed
 - Filtering by status, date range
+- **Ownership validation** - Users can only reschedule their own appointments
+- **Clinic hours validation** - Prevents scheduling outside operating hours
 
 ### Clinic Status Management
 - Public endpoint to check if clinic is open
 - Admin-only status updates (open, close, closing_soon)
 - Prevents appointment creation when clinic is closed
+
+### Error Handling
+- **Consistent error responses** - All errors include timestamp and error_type
+- Custom exceptions for specific scenarios
+- Comprehensive error messages for validation failures
 
 ## 📋 Technology Stack
 
@@ -63,36 +82,49 @@ backend/
 │   ├── common/                    # Shared utilities
 │   │   ├── enums.py              # String enums
 │   │   ├── exceptions.py         # Custom HTTP exceptions
+│   │   ├── error_responses.py    # Error response schemas
 │   │   ├── dependencies.py       # FastAPI dependencies (auth, RBAC)
 │   │   └── utils.py              # Helper functions
 │   ├── infrastructure/            # External services
 │   │   └── auth.py               # JWT & password hashing
 │   └── features/                  # Feature modules
-│       ├── auth/                  # Authentication
-│       │   ├── router.py
-│       │   ├── schemas.py
-│       │   └── service.py
-│       ├── users/                 # User management
-│       │   ├── models.py
-│       │   └── repository.py
+│       ├── auth/                  # Authentication & logout
+│       │   ├── models.py         # TokenBlacklist model
+│       │   ├── router.py         # Register, login, logout
+│       │   ├── schemas.py        # Auth request/response schemas
+│       │   ├── repository.py     # Token blacklist repository
+│       │   ├── service.py        # Auth business logic
+│       │   └── tasks.py          # Background token cleanup
+│       ├── users/                 # User profile management
+│       │   ├── models.py         # User model (with city, preferences)
+│       │   ├── schemas.py        # Profile request/response schemas
+│       │   ├── repository.py     # User data access
+│       │   ├── service.py        # Profile business logic
+│       │   └── router.py         # Profile endpoints
 │       ├── pets/                  # Pet management
-│       │   ├── models.py
-│       │   ├── schemas.py
-│       │   ├── repository.py
-│       │   ├── service.py
-│       │   └── router.py
-│       ├── appointments/          # Appointment booking
-│       │   ├── models.py
-│       │   ├── schemas.py
-│       │   ├── repository.py
-│       │   ├── service.py
-│       │   └── router.py
+│       │   ├── models.py         # Pet model (with species, notes)
+│       │   ├── schemas.py        # Pet request/response schemas
+│       │   ├── repository.py     # Pet data access
+│       │   ├── service.py        # Pet business logic
+│       │   └── router.py         # Pet endpoints
+│       ├── appointments/          # Appointment booking & rescheduling
+│       │   ├── models.py         # Appointment model
+│       │   ├── schemas.py        # Appointment schemas (with reschedule)
+│       │   ├── repository.py     # Appointment data access
+│       │   ├── service.py        # Appointment business logic
+│       │   └── router.py         # Appointment endpoints
 │       └── clinic/                # Clinic status
-│           ├── models.py
-│           ├── schemas.py
-│           ├── repository.py
-│           ├── service.py
-│           └── router.py
+│           ├── models.py         # ClinicStatus model
+│           ├── schemas.py        # Clinic status schemas
+│           ├── repository.py     # Clinic data access
+│           ├── service.py        # Clinic business logic
+│           └── router.py         # Clinic endpoints
+├── tests/                         # Test suite
+│   ├── test_auth_*.py            # Authentication tests
+│   ├── test_user_*.py            # User profile tests
+│   ├── test_appointment_*.py     # Appointment tests
+│   ├── test_token_*.py           # Token blacklist tests
+│   └── test_exception_*.py       # Error handling tests
 └── .env                          # Environment variables
 ```
 
@@ -210,6 +242,14 @@ Once running, access:
 |--------|----------|-------------|---------------|
 | POST | `/register` | Register new user (auto-login) | No |
 | POST | `/login` | Login existing user | No |
+| POST | `/logout` | **Logout and invalidate token** | **Yes** |
+
+### Users (`/api/v1/users`)
+
+| Method | Endpoint | Description | Auth Required |
+|--------|----------|-------------|---------------|
+| GET | `/profile` | **Get current user's profile** | **Yes** |
+| PATCH | `/profile` | **Update current user's profile** | **Yes** |
 
 ### Pets (`/api/v1/pets`)
 
@@ -228,6 +268,7 @@ Once running, access:
 | POST | `/` | Create appointment | Yes | No |
 | GET | `/` | List appointments (with filters) | Yes | No |
 | PATCH | `/{id}/status` | Update appointment status | Yes | **Yes** |
+| PATCH | `/{id}/reschedule` | **Reschedule appointment** | **Yes** | **No** |
 | DELETE | `/{id}` | Cancel appointment | Yes | No |
 
 **Query Parameters for GET:**
@@ -293,6 +334,22 @@ GET /api/v1/pets
 Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 ```
 
+### 4. Logout (Invalidate Token)
+
+```bash
+POST /api/v1/auth/logout
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+```
+
+**Response:**
+```json
+{
+  "message": "Successfully logged out"
+}
+```
+
+After logout, the token is blacklisted and cannot be used for authentication. A background task automatically removes expired tokens from the blacklist daily.
+
 ## 👤 User Roles
 
 ### Admin
@@ -325,7 +382,27 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 # Register admin user
 curl -X POST http://localhost:8000/api/v1/auth/register \
   -H "Content-Type: application/json" \
+  -d '{"email":"admin@vetclinic.com","password":"admin123","full_name":"Admin User"}'
+
+# Login
+curl -X POST http://localhost:8000/api/v1/auth/login \
+  -H "Content-Type: application/json" \
   -d '{"email":"admin@vetclinic.com","password":"admin123"}'
+
+# Get user profile
+curl -X GET http://localhost:8000/api/v1/users/profile \
+  -H "Authorization: Bearer YOUR_TOKEN"
+
+# Update user profile
+curl -X PATCH http://localhost:8000/api/v1/users/profile \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "full_name": "Updated Name",
+    "city": "San Francisco",
+    "phone": "+1-555-0123",
+    "preferences": {"notifications": true, "theme": "dark"}
+  }'
 
 # Create a pet
 curl -X POST http://localhost:8000/api/v1/pets \
@@ -335,7 +412,8 @@ curl -X POST http://localhost:8000/api/v1/pets \
     "name": "Buddy",
     "species": "dog",
     "breed": "Golden Retriever",
-    "date_of_birth": "2020-05-15"
+    "date_of_birth": "2020-05-15",
+    "notes": "Friendly and energetic"
   }'
 
 # Create an appointment
@@ -348,6 +426,19 @@ curl -X POST http://localhost:8000/api/v1/appointments \
     "service_type": "routine",
     "notes": "Annual checkup"
   }'
+
+# Reschedule an appointment
+curl -X PATCH http://localhost:8000/api/v1/appointments/APPOINTMENT_UUID/reschedule \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "start_time": "2024-12-26T14:00:00",
+    "end_time": "2024-12-26T14:45:00"
+  }'
+
+# Logout
+curl -X POST http://localhost:8000/api/v1/auth/logout \
+  -H "Authorization: Bearer YOUR_TOKEN"
 ```
 
 ## 🗄️ Database Schema
@@ -356,15 +447,27 @@ curl -X POST http://localhost:8000/api/v1/appointments \
 - `id` (UUID, PK)
 - `email` (String, Unique)
 - `hashed_password` (String)
+- `full_name` (String)
+- `phone` (String, Optional)
+- **`city` (String, Optional)** - User's city location
+- **`preferences` (JSON, Optional)** - User preferences as JSON object
 - `role` (String: "admin" or "pet_owner")
 - `is_active` (Boolean)
 - `created_at` (DateTime)
 
+### Token Blacklist Table
+- **`id` (UUID, PK)** - Unique identifier
+- **`token` (String, Indexed)** - Blacklisted JWT token
+- **`user_id` (UUID, FK → users.id)** - User who owns the token
+- **`expires_at` (DateTime)** - Token expiration timestamp
+- **`created_at` (DateTime)** - When token was blacklisted
+
 ### Pets Table
 - `id` (UUID, PK)
 - `name` (String)
-- `species` (String)
+- **`species` (String, Required)** - Pet species (e.g., dog, cat)
 - `breed` (String, Optional)
+- **`notes` (String, Optional)** - Additional notes about the pet
 - `date_of_birth` (Date, Optional)
 - `last_vaccination` (DateTime, Optional)
 - `medical_history` (JSON)
@@ -391,12 +494,37 @@ curl -X POST http://localhost:8000/api/v1/appointments \
 
 ## 🔧 Business Rules
 
+### Token Blacklist & Logout
+1. **Logout invalidates tokens** - Tokens are added to blacklist on logout
+2. **Blacklisted tokens rejected** - Authentication fails for blacklisted tokens
+3. **Automatic cleanup** - Background task removes expired tokens daily (runs every 24 hours)
+4. **Token expiration stored** - Blacklist entries include token expiration timestamp
+
+### User Profile Management
+1. **Email uniqueness** - Email must be unique across all users
+2. **Phone format validation** - Phone numbers must match valid format
+3. **City validation** - City cannot be empty if provided
+4. **Preferences structure** - Preferences must be valid JSON object
+5. **Partial updates** - All profile fields are optional in updates
+
+### Pet Management
+1. **Species required** - All pets must have a species specified
+2. **Breed and notes optional** - Additional details are optional
+
 ### Appointment Creation
 1. Pet must exist and be owned by the user (or user is admin)
 2. Start time must be in the future
 3. Clinic must not be closed
 4. Time slot must not overlap with existing pending/confirmed appointments
 5. End time is automatically calculated based on service type
+
+### Appointment Rescheduling
+1. **Ownership validation** - Users can only reschedule appointments for their own pets
+2. **Status restriction** - Only appointments with status "scheduled" or "confirmed" can be rescheduled
+3. **Time range validation** - End time must be after start time
+4. **Clinic hours validation** - New time must fall within clinic operating hours
+5. **Double-booking prevention** - New time slot must not conflict with existing appointments
+6. **Updated timestamp** - Appointment's updated_at is automatically updated
 
 ### Service Durations
 - **Vaccination**: 30 minutes
@@ -414,6 +542,11 @@ curl -X POST http://localhost:8000/api/v1/appointments \
 - **Confirmed** → Completed (admin only)
 - **Any** → Cancelled (owner or admin, except completed)
 - **Completed/Cancelled** → Cannot be changed
+
+### Error Responses
+- **Consistent format** - All errors include `detail`, `error_type`, and `timestamp`
+- **Specific exceptions** - Custom exceptions for token blacklist, profile updates, appointment rescheduling, and time slot conflicts
+- **HTTP status codes** - Proper status codes (401, 403, 404, 409, 422) for different error types
 
 ## 🐛 Troubleshooting
 
