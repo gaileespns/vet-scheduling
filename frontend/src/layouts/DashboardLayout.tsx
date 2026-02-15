@@ -4,6 +4,7 @@
 
 import type { ReactNode } from 'react';
 import { Navbar } from './Navbar';
+import { Footer } from './Footer';
 
 interface DashboardLayoutProps {
   children: ReactNode;
@@ -16,6 +17,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
       <main className="container page">
         {children}
       </main>
+      <Footer />
     </div>
   );
 }
