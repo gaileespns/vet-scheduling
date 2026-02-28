@@ -1,11 +1,11 @@
 # Vet Clinic Frontend
 
-A modern, responsive React application for managing veterinary clinic operations, built with TypeScript and vanilla CSS.
+A modern, responsive veterinary clinic management application with separate dashboards for clients and staff. Built with vanilla HTML, CSS, and JavaScript for simplicity and performance.
 
 ## 🚀 Quick Start
 
 ```bash
-# Install dependencies
+# Install dependencies (for development server only)
 npm install
 
 # Start development server
@@ -22,35 +22,33 @@ The application will be available at `http://localhost:5173`
 
 ## 📋 Prerequisites
 
-- Node.js 18+ or higher
-- npm 9+ or higher
-- Backend API running on `http://localhost:8000`
+- Node.js 18+ or higher (for development server)
+- npm 9+ or higher (for development server)
+- Backend API running on `http://localhost:8000` or deployed URL
 
 ## 🏗️ Architecture
 
-### Clean, Scalable Structure
+### Simple, Performant Structure
 
 ```
 frontend/
-├── src/
-│   ├── components/          # Feature-based components
-│   │   ├── ui/             # Reusable UI components
-│   │   ├── auth/           # Authentication components
-│   │   ├── pets/           # Pet management components
-│   │   ├── appointments/   # Appointment components
-│   │   └── profile/        # Profile components
-│   ├── contexts/           # React contexts
-│   ├── hooks/              # Custom hooks (API logic layer)
-│   ├── layouts/            # Page layouts
-│   ├── lib/                # Utilities
-│   ├── pages/              # Route pages
-│   ├── types/              # TypeScript types
-│   ├── index.css           # CSS system
-│   ├── main.tsx            # App entry point
-│   └── App.tsx             # Routing configuration
-├── public/                 # Static assets
-└── package.json            # Dependencies
+├── public/                 # Static HTML pages
+│   ├── landing.html       # Landing page
+│   ├── auth.html          # Login/Register page
+│   ├── app.html           # Client dashboard
+│   └── staff-dashboard.html # Staff dashboard
+├── src/                   # React components (legacy)
+├── .env                   # Environment variables
+└── package.json           # Dependencies
 ```
+
+### Technology Stack
+
+- **Vanilla HTML/CSS/JavaScript** - No framework overhead
+- **CSS Variables** - Consistent theming
+- **LocalStorage** - Client-side state management
+- **JWT Authentication** - Secure token-based auth
+- **Fetch API** - Native HTTP requests
 
 ## 🎨 Styling System
 
@@ -85,214 +83,373 @@ No CSS framework dependencies! The app uses a custom CSS system with:
 
 ## 🎯 Key Features
 
-### Authentication & Authorization
-- User registration with validation
-- Secure login with JWT tokens
-- Token-based logout
-- Protected routes
-- Role-based access control (Admin/Pet Owner)
+### 🔐 Authentication & Authorization
+- **Client-only registration** - Simplified registration flow
+- **Secure login** with JWT tokens
+- **Token blacklisting** on logout
+- **Role-based access** (Admin/Client)
+- **10 pre-created staff accounts** (Admin1-Admin10)
 
-### User Profile Management
-- View and update profile information
-- Email and phone validation
-- City and preferences support
+### 👤 Client Dashboard (`app.html`)
+- **Pet Management**
+  - Add, edit, and delete pets
+  - Track species, breed, date of birth, and notes
+  - Vaccination status (Unvaccinated/Vaccinated)
+  - Sex tracking (Male/Female/Unknown)
+- **Appointment Booking**
+  - Book appointments with available time slots
+  - Respects clinic hours (no booking on closed days)
+  - Service types: Vaccination (30min), Routine (45min), Surgery (120min), Emergency (15min)
+  - View upcoming appointments
+  - Reschedule appointments
+  - Cancel appointments
+- **Profile Management**
+  - View and update profile information
+  - Email, phone, and full name
+- **Dashboard Stats**
+  - Upcoming appointments count
+  - Total pets registered
+  - Next visit information
+  - Total visits count
 
-### Pet Management
-- Add, edit, and delete pets
-- Track species, breed, and notes
-- Vaccination status tracking
-- Date of birth and medical history
+### 👨‍⚕️ Staff Dashboard (`staff-dashboard.html`)
+- **Three-Tab Interface**
+  - **Dashboard Tab**: Calendar view and statistics
+  - **All Appointments Tab**: Complete appointment list with filters
+  - **Settings Tab**: Clinic hours management
+- **Appointment Management**
+  - View all appointments with pet and owner details
+  - Filter by status: All, Pending, Confirmed, Today, Completed
+  - Confirm pending appointments
+  - Complete confirmed appointments
+  - Cancel appointments
+  - Calendar view with appointment details
+- **Clinic Hours Management**
+  - Set hours for Monday-Friday, Saturday, Sunday
+  - Mark days as closed
+  - Hours saved to localStorage
+  - Automatically controls booking availability
+- **Statistics Dashboard**
+  - Pending appointments count
+  - Confirmed appointments count
+  - Today's appointments count
+  - Total appointments count
+- **Calendar View**
+  - Monthly calendar with appointment indicators
+  - Shows appointment times and pet names
+  - Color-coded by status (pending/confirmed)
+  - Click date to filter appointments
 
-### Appointment Booking
-- Book appointments with service type selection
-- View appointments with status filtering
-- Reschedule appointments
-- Cancel appointments with confirmation
-- Service types: Vaccination, Routine, Surgery, Emergency
+### 🏥 Clinic Hours Integration
+- **Staff sets hours** in Settings tab
+- **Client booking respects hours** automatically
+- **Closed days blocked** from booking
+- **Time slots filtered** to match clinic hours
+- **Default hours**: Mon-Fri 8AM-8PM, Sat 9AM-5PM, Sun Closed
 
-### Admin Dashboard
-- Clinic status management
-- Confirm/reject appointments
-- Complete appointments
-- View statistics
-- Manage all pets and appointments
+### 🎨 Design System
+- **Consistent color palette** - Forest green, sage, amber accents
+- **Playfair Display** - Elegant serif for headings
+- **Instrument Sans** - Clean sans-serif for body
+- **Responsive design** - Mobile, tablet, desktop optimized
+- **Custom modals** - No browser confirm dialogs
+- **Toast notifications** - User feedback system
 
 ## 🔧 Technology Stack
 
-- **React 19** - UI library
-- **TypeScript** - Type safety
-- **Vite** - Build tool and dev server
-- **React Router v7** - Client-side routing
-- **Vanilla CSS** - Styling with CSS variables
-- **date-fns** - Date formatting and manipulation
-- **jwt-decode** - JWT token parsing
+- **HTML5** - Semantic markup
+- **CSS3** - Modern styling with variables
+- **Vanilla JavaScript** - No framework dependencies
+- **Vite** - Development server and build tool
+- **LocalStorage** - Client-side data persistence
+- **Fetch API** - HTTP requests
+- **JWT** - Token-based authentication
 
-## 📁 Project Structure Explained
+## 📁 File Structure
 
-### `/hooks` - The Logic Layer
-
-All API calls are centralized in custom hooks:
-
-```typescript
-// usePets.ts handles ALL pet-related API calls
-const { pets, createPet, updatePet, deletePet, isLoading, error } = usePets();
-```
-
-Benefits:
-- Single source of truth for each backend entity
-- Reusable across multiple components
-- Consistent error handling
-- Automatic loading state management
-- Prevents redundant API calls
-
-### `/components` - Feature-Based Organization
-
-Components are organized by feature, not by type:
+### `/public` - Application Pages
 
 ```
-components/
-├── ui/              # Reusable atoms (Button, Input, Card)
-├── auth/            # LoginForm, RegisterForm
-├── pets/            # PetCard, PetForm
-├── appointments/    # AppointmentCard, AppointmentForm
-└── profile/         # ProfileForm
+public/
+├── landing.html           # Landing page with features
+├── auth.html             # Login/Register (client-only)
+├── app.html              # Client dashboard
+└── staff-dashboard.html  # Staff dashboard
 ```
 
-### `/types` - Backend Schema Alignment
+### Page Responsibilities
 
-TypeScript interfaces match backend schemas exactly:
+**landing.html**
+- Marketing page
+- Feature showcase
+- Call-to-action buttons
+- Navigation to auth
 
-```typescript
-export interface Pet {
-  id: string;
-  name: string;
-  species: string;
-  breed: string | null;
-  // ... matches backend API
-}
-```
+**auth.html**
+- Client registration (no role selection)
+- Login for both clients and staff
+- Auto-redirect based on role
+- Password validation (min 8 chars)
 
-### `/pages` - Lean Route Components
+**app.html** (Client Dashboard)
+- Pet management (CRUD)
+- Appointment booking with clinic hours check
+- Profile management
+- Dashboard statistics
+- Tab navigation (Dashboard, Appointments, Pets, Profile)
 
-Pages compose features and layouts:
-
-```typescript
-export function PetsPage() {
-  const { pets, createPet } = usePets(); // Logic from hook
-  return (
-    <DashboardLayout>
-      <PetCard /> {/* UI from components */}
-    </DashboardLayout>
-  );
-}
-```
+**staff-dashboard.html** (Staff Dashboard)
+- Three-tab interface (Dashboard, All Appointments, Settings)
+- Appointment management (confirm, complete, cancel)
+- Calendar view with appointment details
+- Clinic hours management
+- Statistics dashboard
+- Filter appointments by status
 
 ## 🔐 Authentication Flow
 
-1. User submits credentials (register/login)
-2. Backend returns JWT token
+### Registration (Client Only)
+1. User fills registration form (email, password, full name)
+2. Backend creates user with `pet_owner` role
+3. Auto-login after registration
+4. JWT token stored in localStorage
+5. Redirect to client dashboard
+
+### Login (Client or Staff)
+1. User enters credentials
+2. Backend validates and returns JWT token
 3. Token stored in localStorage
-4. User profile fetched and stored in context
-5. Protected routes check authentication
-6. Token sent with all API requests
-7. Logout blacklists token on backend
+4. User profile fetched to determine role
+5. **Auto-redirect based on role:**
+   - `admin` → `/staff-dashboard.html`
+   - `pet_owner` → `/app.html`
+
+### Logout
+1. User clicks logout button
+2. Custom modal confirms action
+3. Token sent to backend for blacklisting
+4. Token removed from localStorage
+5. Redirect to auth page
+
+### Staff Accounts
+Pre-created admin accounts:
+- **Usernames**: Admin1, Admin2, ..., Admin10
+- **Emails**: admin1@vetclinic.com, admin2@vetclinic.com, etc.
+- **Password**: `admin123` (all accounts)
+- **Role**: `admin` (auto-assigned by backend)
 
 ## 🌐 API Integration
 
-### Base URL Configuration
+### Environment Configuration
 
-Set the API base URL in `.env`:
+Create `.env` file in frontend directory:
 
 ```env
+# Development
 VITE_API_BASE_URL=http://localhost:8000
+
+# Production (example)
+# VITE_API_BASE_URL=https://vet-scheduling-uiob.onrender.com
 ```
 
-### API Client
+### API Base URL Detection
 
-All API calls use the custom API client (`src/lib/api-client.ts`):
+The application automatically detects the environment:
 
-```typescript
-import { apiClient } from '../lib/api-client';
-
-// Automatically includes JWT token
-const response = await apiClient.get('/api/v1/pets');
+```javascript
+const API_BASE_URL = location.hostname.includes("localhost")
+  ? "http://localhost:8000"
+  : "https://vet-scheduling-uiob.onrender.com";
 ```
 
-### Custom Hooks Pattern
+### Authentication Headers
 
-```typescript
-// ✅ CORRECT - Use custom hooks
-const { pets, createPet, isLoading, error } = usePets();
+All authenticated requests include JWT token:
 
-// ❌ WRONG - Don't call API directly
-fetch('/api/v1/pets')
+```javascript
+const response = await fetch(`${API_BASE_URL}/api/v1/pets`, {
+  headers: {
+    'Authorization': `Bearer ${localStorage.getItem('access_token')}`
+  }
+});
+```
+
+### Error Handling
+
+Consistent error handling across all pages:
+
+```javascript
+try {
+  const response = await fetch(url, options);
+  if (!response.ok) {
+    const error = await response.json();
+    showToast(error.detail || 'Operation failed', '❌');
+    return;
+  }
+  // Success handling
+} catch (error) {
+  console.error('Error:', error);
+  showToast('Connection error', '❌');
+}
 ```
 
 ## 📱 Responsive Design
 
-The application is fully responsive:
+The application is fully responsive with breakpoints:
 
-- **Mobile** (< 768px): Single column, touch-friendly
-- **Tablet** (768px - 1024px): 2-column grid
-- **Desktop** (> 1024px): 3-column grid, full navigation
+- **Mobile** (< 768px): 
+  - Single column layouts
+  - Stacked navigation
+  - Touch-friendly buttons
+  - Simplified calendar view
+  
+- **Tablet** (768px - 1024px):
+  - 2-column grids
+  - Side-by-side cards
+  - Optimized spacing
+  
+- **Desktop** (> 1024px):
+  - 3-4 column grids
+  - Full navigation
+  - Maximum content density
+  - Enhanced calendar view
+
+### Design Tokens
+
+```css
+/* Colors */
+--forest: #1e3a2f;        /* Primary dark */
+--sage: #7aaa85;          /* Primary light */
+--amber: #c8843a;         /* Accent */
+--cream: #f8f3ec;         /* Background */
+
+/* Spacing */
+--radius: 16px;           /* Border radius */
+--shadow-sm: 0 2px 8px rgba(30,58,47,0.07);
+--shadow-md: 0 8px 28px rgba(30,58,47,0.11);
+
+/* Typography */
+font-family: 'Playfair Display', serif;  /* Headings */
+font-family: 'Instrument Sans', sans-serif;  /* Body */
+```
 
 ## 🧪 Development Guidelines
 
-### Adding a New Feature
+### Code Organization
 
-1. **Define Types** in `/types/index.ts`
-2. **Create Hook** in `/hooks` for API calls
-3. **Build Components** in `/components`
-4. **Add Page** in `/pages`
-5. **Register Route** in `App.tsx`
+Each HTML file is self-contained with:
+- Inline CSS in `<style>` tags
+- Inline JavaScript in `<script>` tags
+- No external dependencies (except fonts)
 
-### Code Style
+### Adding New Features
 
-- TypeScript strict mode enabled
-- ESLint configured for React
-- camelCase for variables
-- PascalCase for components
-- One component per file
+1. **Identify the page** (client or staff dashboard)
+2. **Add HTML structure** in appropriate section
+3. **Style with CSS** using existing variables
+4. **Implement JavaScript** following existing patterns
+5. **Test responsiveness** on all breakpoints
 
-### Error Handling
+### JavaScript Patterns
 
-Errors are handled at the hook level:
+**API Calls:**
+```javascript
+async function loadData() {
+  const token = localStorage.getItem('access_token');
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/v1/endpoint`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    if (response.ok) {
+      const data = await response.json();
+      // Handle success
+    }
+  } catch (error) {
+    console.error('Error:', error);
+    showToast('Error message', '❌');
+  }
+}
+```
 
-```typescript
-const { error } = usePets();
+**Modal Management:**
+```javascript
+function openModal(id) {
+  document.getElementById(id).classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
 
-{error && <Alert type="error">{error}</Alert>}
+function closeModal(id) {
+  document.getElementById(id).classList.remove('open');
+  document.body.style.overflow = '';
+}
+```
+
+**Toast Notifications:**
+```javascript
+showToast('Success message', '✓');
+showToast('Error message', '❌');
+showToast('Warning message', '⚠️');
+```
+
+### CSS Patterns
+
+**Cards:**
+```css
+.card {
+  background: var(--card-bg);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-sm);
+}
+```
+
+**Buttons:**
+```css
+.btn-primary {
+  background: var(--forest);
+  color: white;
+  padding: 10px 20px;
+  border-radius: 10px;
+}
+```
+
+**Forms:**
+```css
+.form-input {
+  width: 100%;
+  padding: 10px 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+}
 ```
 
 ## 🚦 Available Scripts
 
 ```bash
 # Development
-npm run dev          # Start dev server with hot reload
+npm run dev          # Start Vite dev server (port 5173)
 
 # Production
-npm run build        # Build for production
+npm run build        # Build static files to dist/
 npm run preview      # Preview production build
 
-# Code Quality
-npm run lint         # Run ESLint
+# No linting or testing configured (vanilla JS)
 ```
 
-## 🔗 API Endpoints
-
-All endpoints are documented in `backend/README.md`:
+## 🔗 API Endpoints Used
 
 ### Authentication
-- `POST /api/v1/auth/register` - Register new user
-- `POST /api/v1/auth/login` - Login user
+- `POST /api/v1/auth/register` - Register new client
+- `POST /api/v1/auth/login` - Login (client or staff)
 - `POST /api/v1/auth/logout` - Logout and blacklist token
 
 ### Users
 - `GET /api/v1/users/profile` - Get current user profile
 - `PATCH /api/v1/users/profile` - Update user profile
+- `GET /api/v1/users` - List all users (admin only, for staff dashboard)
 
 ### Pets
-- `GET /api/v1/pets` - List all pets
+- `GET /api/v1/pets` - List pets (filtered by role)
 - `POST /api/v1/pets` - Create new pet
 - `GET /api/v1/pets/{id}` - Get pet by ID
 - `PATCH /api/v1/pets/{id}` - Update pet
@@ -300,84 +457,113 @@ All endpoints are documented in `backend/README.md`:
 
 ### Appointments
 - `GET /api/v1/appointments` - List appointments (with filters)
+- `GET /api/v1/appointments/available-slots` - Get available time slots
 - `POST /api/v1/appointments` - Create appointment
-- `PATCH /api/v1/appointments/{id}/status` - Update status (admin)
-- `PATCH /api/v1/appointments/{id}/reschedule` - Reschedule
+- `PATCH /api/v1/appointments/{id}/status` - Update status (admin only)
+- `PATCH /api/v1/appointments/{id}/reschedule` - Reschedule appointment
 - `DELETE /api/v1/appointments/{id}` - Cancel appointment
 
-### Clinic
+### Clinic (Not currently used in frontend)
 - `GET /api/v1/clinic/status` - Get clinic status (public)
-- `PATCH /api/v1/clinic/status` - Update status (admin)
+- `PATCH /api/v1/clinic/status` - Update status (admin only)
+
+**Note:** Clinic hours are managed client-side in localStorage, not via API.
 
 ## 🐛 Troubleshooting
 
 ### API Connection Issues
 
-**Error**: `Failed to fetch`
+**Error**: `Failed to fetch` or CORS errors
 
 **Solution**: 
-- Ensure backend is running on `http://localhost:8000`
-- Check `VITE_API_BASE_URL` in `.env`
-- Verify CORS settings in backend
+- Ensure backend is running
+- Check API_BASE_URL in code matches backend
+- Verify CORS settings in backend allow frontend origin
+- Check browser console for specific error
 
 ### Authentication Issues
 
-**Error**: `401 Unauthorized`
+**Error**: `401 Unauthorized` or redirect loops
 
 **Solution**:
-- Token may be expired or blacklisted
-- Try logging out and logging in again
-- Check browser localStorage for token
+- Token may be expired (24 hours default)
+- Token may be blacklisted after logout
+- Clear localStorage and login again:
+  ```javascript
+  localStorage.clear();
+  ```
+- Check if backend JWT_SECRET_KEY changed
 
-### Build Errors
+### Staff Dashboard Not Loading
 
-**Error**: `Module not found`
-
-**Solution**:
-```bash
-rm -rf node_modules package-lock.json
-npm install
-```
-
-### Port Already in Use
-
-**Error**: `Port 5173 is already in use`
+**Error**: "No appointments found" when appointments exist
 
 **Solution**:
-```bash
-# Windows
-npx kill-port 5173
+- Check browser console for errors
+- Verify `/api/v1/users` endpoint is accessible (admin only)
+- Ensure user has admin role
+- Check network tab for failed requests
 
-# Linux/Mac
-lsof -ti:5173 | xargs kill -9
-```
+### Booking Not Working
+
+**Error**: No time slots available or "Clinic is closed"
+
+**Solution**:
+- Check clinic hours in staff dashboard Settings tab
+- Verify selected date is not marked as closed
+- Ensure selected date is in the future
+- Check if time slots fall within clinic hours
+
+### Modal Not Closing
+
+**Error**: Modal stays open or multiple modals stack
+
+**Solution**:
+- Check for JavaScript errors in console
+- Ensure modal overlay has correct ID
+- Verify closeModal() function is called
+- Refresh page to reset state
+
+### LocalStorage Issues
+
+**Error**: Settings not persisting or data loss
+
+**Solution**:
+- Check browser allows localStorage
+- Verify not in private/incognito mode
+- Check localStorage size limits
+- Clear and reset:
+  ```javascript
+  localStorage.removeItem('clinicHours');
+  localStorage.removeItem('access_token');
+  ```
 
 ## 🎯 Environment Variables
 
 Create a `.env` file in the frontend directory:
 
 ```env
-# API Configuration
+# API Configuration (optional - auto-detected)
 VITE_API_BASE_URL=http://localhost:8000
 
-# Optional: Enable debug mode
-VITE_DEBUG=false
+# Production example
+# VITE_API_BASE_URL=https://vet-scheduling-uiob.onrender.com
 ```
+
+**Note:** The application auto-detects environment based on hostname, so `.env` is optional.
 
 ## 📦 Dependencies
 
 ### Production Dependencies
-- `react` - UI library
-- `react-dom` - React DOM renderer
-- `react-router-dom` - Routing
-- `jwt-decode` - JWT parsing
-- `date-fns` - Date utilities
+- None! Pure vanilla HTML/CSS/JavaScript
 
 ### Development Dependencies
-- `typescript` - Type checking
-- `vite` - Build tool
-- `eslint` - Code linting
-- `@vitejs/plugin-react-swc` - Fast refresh
+- `vite` - Development server and build tool
+- `@vitejs/plugin-react-swc` - React plugin (legacy, not used)
+
+### External Resources
+- **Google Fonts** - Playfair Display & Instrument Sans
+- **Backend API** - FastAPI REST API
 
 ## 🚀 Deployment
 
@@ -387,50 +573,70 @@ VITE_DEBUG=false
 npm run build
 ```
 
-Output will be in the `dist/` directory.
+Output will be in the `dist/` directory containing:
+- `landing.html`
+- `auth.html`
+- `app.html`
+- `staff-dashboard.html`
+- Other static assets
 
 ### Deploy to Vercel
 
-```bash
-# Install Vercel CLI
-npm i -g vercel
+1. Install Vercel CLI: `npm i -g vercel`
+2. Run: `vercel`
+3. Set environment variable: `VITE_API_BASE_URL=your-backend-url`
 
-# Deploy
-vercel
-```
+Or use Vercel dashboard:
+- Connect GitHub repository
+- Set build command: `npm run build`
+- Set output directory: `dist`
+- Add environment variable
 
 ### Deploy to Netlify
 
-```bash
-# Install Netlify CLI
-npm i -g netlify-cli
+1. Install Netlify CLI: `npm i -g netlify-cli`
+2. Run: `netlify deploy --prod --dir=dist`
 
-# Deploy
-netlify deploy --prod --dir=dist
+Or use Netlify dashboard:
+- Connect GitHub repository
+- Set build command: `npm run build`
+- Set publish directory: `dist`
+- Add environment variable
+
+### Deploy to Static Hosting
+
+The `dist/` folder contains static HTML files that can be hosted anywhere:
+- GitHub Pages
+- AWS S3 + CloudFront
+- Azure Static Web Apps
+- Google Cloud Storage
+- Any static file server
+
+### Important: Update API URL
+
+For production, update the API_BASE_URL in each HTML file:
+
+```javascript
+// Change from auto-detection to hardcoded production URL
+const API_BASE_URL = "https://your-backend-api.com";
 ```
 
-### Environment Variables for Production
-
-Set these in your hosting platform:
-
-```
-VITE_API_BASE_URL=https://your-api-domain.com
-```
+Or use environment variable replacement during build.
 
 ## 📚 Additional Documentation
 
 - `QUICKSTART.md` - Quick start guide
-- `FEATURES.md` - Complete feature list
-- `CSS_MIGRATION_GUIDE.md` - CSS conversion guide
-- `CONVERSION_COMPLETE.md` - Tailwind to CSS migration summary
+- `backend/README.md` - Backend API documentation
+- `backend/STAFF_ACCOUNTS.md` - Staff account details
+- `CLINIC_HOURS_INTEGRATION.md` - Clinic hours feature documentation
 
 ## 🤝 Contributing
 
 1. Follow the existing code structure
-2. Use TypeScript for all new files
-3. Add types for all props and state
-4. Use custom hooks for API calls
-5. Keep components small and focused
+2. Use vanilla JavaScript (no frameworks)
+3. Maintain consistent styling with CSS variables
+4. Keep HTML files self-contained
+5. Test on multiple screen sizes
 6. Write descriptive commit messages
 
 ## 📄 License
@@ -444,19 +650,43 @@ For issues and questions:
 2. Review `backend/README.md` for API details
 3. Check browser console for errors
 4. Review network tab for API issues
+5. Check localStorage for token/data issues
 
 ## 🎉 Success Checklist
 
-- [ ] Dependencies installed (`npm install`)
-- [ ] Backend running on port 8000
+- [ ] Backend running and accessible
 - [ ] Frontend running on port 5173
-- [ ] Can register new user
-- [ ] Can login successfully
-- [ ] Can add pets
-- [ ] Can book appointments
-- [ ] Can update profile
-- [ ] Admin features work (if admin user)
+- [ ] Can access landing page
+- [ ] Can register new client
+- [ ] Can login as client
+- [ ] Can login as staff (admin1@vetclinic.com / admin123)
+- [ ] Client can add pets
+- [ ] Client can book appointments
+- [ ] Client can update profile
+- [ ] Staff can view all appointments
+- [ ] Staff can confirm appointments
+- [ ] Staff can set clinic hours
+- [ ] Booking respects clinic hours
+- [ ] Calendar shows appointments
+- [ ] Filters work correctly
+
+## 🔑 Key Differences from React Version
+
+This version uses vanilla HTML/CSS/JavaScript instead of React:
+
+**Advantages:**
+- ✅ No build step required for development
+- ✅ Faster page loads (no framework overhead)
+- ✅ Simpler deployment (static files)
+- ✅ Easier to understand for beginners
+- ✅ No dependency management issues
+
+**Trade-offs:**
+- ❌ More code duplication
+- ❌ Manual DOM manipulation
+- ❌ No component reusability
+- ❌ No type safety (no TypeScript)
 
 ---
 
-Built with ❤️ using React, TypeScript, and Vanilla CSS
+Built with ❤️ using vanilla HTML, CSS, and JavaScript
