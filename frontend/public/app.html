@@ -1765,21 +1765,6 @@
       greeting.innerHTML = `Good morning, <em>${firstName}!</em>`;
     }
 
-    // Update date and time
-    const dashSub = document.querySelector('.dash-sub');
-    if (dashSub) {
-      const now = new Date();
-      const options = { 
-        weekday: 'long', 
-        year: 'numeric', 
-        month: 'long', 
-        day: 'numeric',
-        timeZone: 'Asia/Manila'
-      };
-      const dateStr = now.toLocaleDateString('en-US', options);
-      dashSub.textContent = `${dateStr} · Philippine Standard Time`;
-    }
-
     // Update avatar
     const avatar = document.querySelector('.avatar');
     if (avatar) {
