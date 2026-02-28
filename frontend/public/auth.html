@@ -415,8 +415,11 @@ select.form-input option {
 
 <script>
 // API Configuration
-const API_BASE_URL = 'http://localhost:8000';
-
+const API_BASE_URL =
+  location.hostname.includes("localhost")
+    ? "http://localhost:8000"
+    : "https://vet-scheduling-uiob.onrender.com";
+    
 // Tab switching
 function switchTab(tab) {
   const tabs = document.querySelectorAll('.auth-tab');
