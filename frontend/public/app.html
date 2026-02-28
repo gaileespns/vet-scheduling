@@ -200,7 +200,7 @@
   }
   .dash-greeting em { font-style: italic; color: var(--amber-light); }
   .dash-sub { color: rgba(255,255,255,0.45); font-size: 0.88rem; margin-bottom: 36px; font-weight: 300; }
-  .dash-stats { display: grid; grid-template-columns: repeat(4,1fr); gap: 14px; }
+  .dash-stats { display: grid; grid-template-columns: repeat(4,1fr); gap: 14px; margin-top: 32px; }
   .stat-card {
     background: rgba(255,255,255,0.06);
     backdrop-filter: blur(12px);
@@ -747,7 +747,6 @@
   <div class="dash-hero">
     <div class="dash-hero-content">
       <div class="dash-greeting">Good morning, <em>Maria!</em></div>
-      <div class="dash-sub">Saturday, February 28, 2026 · Philippine Standard Time</div>
       <div class="dash-stats">
         <div class="stat-card">
           <div class="stat-label">Upcoming</div>
@@ -1252,17 +1251,18 @@
   </div>
 </div>
 
-<!-- Add Pet Modal -->
+<!-- Add/Edit Pet Modal -->
 <div class="modal-overlay" id="pet-modal">
   <div class="modal">
     <div class="modal-header">
       <div>
-        <div class="modal-title">Add a New Pet</div>
-        <div class="modal-sub">Register your pet to start booking visits</div>
+        <div class="modal-title" id="pet-modal-title">Add a New Pet</div>
+        <div class="modal-sub" id="pet-modal-subtitle">Register your pet to start booking visits</div>
       </div>
       <button class="modal-close" onclick="closeModal('pet-modal')">✕</button>
     </div>
     <div class="modal-body">
+      <input type="hidden" id="pet-id" value="">
       <div class="form-row">
         <div class="form-group">
           <label class="form-label">Pet Name</label>
@@ -1311,7 +1311,7 @@
     </div>
     <div class="modal-footer">
       <button class="btn btn-outline" onclick="closeModal('pet-modal')">Cancel</button>
-      <button class="btn btn-primary btn-lg" onclick="addPet()">Add Pet</button>
+      <button class="btn btn-primary btn-lg" id="pet-modal-submit" onclick="savePet()">Add Pet</button>
     </div>
   </div>
 </div>
@@ -1337,6 +1337,31 @@
     <div class="modal-footer">
       <button class="btn btn-outline" onclick="closeModal('logout-modal')">Cancel</button>
       <button class="btn btn-danger" onclick="confirmLogout()">Yes, Logout</button>
+    </div>
+  </div>
+</div>
+
+<!-- Delete Pet Confirmation Modal -->
+<div class="modal-overlay" id="delete-pet-modal">
+  <div class="modal" style="max-width: 420px;">
+    <div class="modal-header">
+      <div>
+        <div class="modal-title">Delete Pet</div>
+        <div class="modal-sub" id="delete-pet-subtitle">Are you sure?</div>
+      </div>
+      <button class="modal-close" onclick="closeModal('delete-pet-modal')">✕</button>
+    </div>
+    <div class="modal-body" style="padding: 24px 32px;">
+      <div style="text-align: center; padding: 20px 0;">
+        <div style="font-size: 3rem; margin-bottom: 12px;">🗑️</div>
+        <p style="color: var(--text-light); font-size: 0.95rem; line-height: 1.6;" id="delete-pet-message">
+          This action cannot be undone.
+        </p>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('delete-pet-modal')">Cancel</button>
+      <button class="btn btn-danger" id="confirm-delete-btn" onclick="confirmDeletePet()">Delete Pet</button>
     </div>
   </div>
 </div>
@@ -1419,7 +1444,7 @@
   });
 
   // ── Modals ────────────────────────────────────────────
-  function openModal(id) {
+  function openModal(id, skipReset = false) {
     document.getElementById(id).classList.add('open');
     document.body.style.overflow = 'hidden';
     
@@ -1436,6 +1461,11 @@
       
       // Load available slots for default date
       loadAvailableSlots();
+    }
+    
+    // Reset pet form when opening pet modal for adding (but not when editing)
+    if (id === 'pet-modal' && !skipReset) {
+      clearPetForm();
     }
   }
   function closeModal(id) {
@@ -1521,6 +1551,32 @@
       return;
     }
 
+    // Check if selected date is within clinic hours
+    const selectedDate = new Date(date);
+    const dayOfWeek = selectedDate.getDay(); // 0 = Sunday, 1 = Monday, etc.
+    
+    // Load clinic hours from localStorage
+    const clinicHours = JSON.parse(localStorage.getItem('clinicHours') || '{"weekday":{"open":"08:00","close":"20:00","closed":false},"saturday":{"open":"09:00","close":"17:00","closed":false},"sunday":{"open":"09:00","close":"17:00","closed":true}}');
+    
+    let daySchedule;
+    if (dayOfWeek === 0) { // Sunday
+      daySchedule = clinicHours.sunday;
+    } else if (dayOfWeek === 6) { // Saturday
+      daySchedule = clinicHours.saturday;
+    } else { // Monday-Friday
+      daySchedule = clinicHours.weekday;
+    }
+    
+    // Check if clinic is closed on selected day
+    if (daySchedule.closed) {
+      container.innerHTML = `
+        <div style="grid-column: 1 / -1; text-align: center; padding: 20px; color: var(--text-light); font-size: 0.85rem;">
+          Clinic is closed on this day. Please select another date.
+        </div>
+      `;
+      return;
+    }
+
     // Show loading state
     container.innerHTML = `
       <div style="grid-column: 1 / -1; text-align: center; padding: 20px; color: var(--text-light); font-size: 0.85rem;">
@@ -1536,7 +1592,17 @@
       if (response.ok) {
         const slots = await response.json();
         
-        if (slots.length === 0) {
+        // Filter slots based on clinic hours
+        const openTime = daySchedule.open;
+        const closeTime = daySchedule.close;
+        
+        const filteredSlots = slots.filter(slot => {
+          const startTime = new Date(slot.start_time);
+          const slotTime = startTime.toTimeString().substring(0, 5); // HH:MM format
+          return slotTime >= openTime && slotTime < closeTime;
+        });
+        
+        if (filteredSlots.length === 0) {
           container.innerHTML = `
             <div style="grid-column: 1 / -1; text-align: center; padding: 20px; color: var(--text-light); font-size: 0.85rem;">
               No available slots for this date. Please try another date.
@@ -1546,7 +1612,7 @@
         }
 
         // Render time slots
-        container.innerHTML = slots.map(slot => {
+        container.innerHTML = filteredSlots.map(slot => {
           const startTime = new Date(slot.start_time);
           const timeStr = startTime.toLocaleTimeString('en-US', { 
             hour: 'numeric', 
@@ -1638,10 +1704,11 @@
     const species = document.getElementById('pet-species')?.value;
     const breed = document.getElementById('pet-breed')?.value?.trim() || null;
     const dateOfBirth = document.getElementById('pet-dob')?.value || null;
+    const sex = document.getElementById('pet-sex')?.value || null;
     const notes = document.getElementById('pet-notes')?.value?.trim() || null;
     const lastVaccination = document.getElementById('pet-vaccination')?.value || null;
 
-    console.log('Adding pet:', { name, species, breed, dateOfBirth, notes, lastVaccination });
+    console.log('Adding pet:', { name, species, breed, dateOfBirth, sex, notes, lastVaccination });
 
     if (!name || !species) {
       showToast('Please enter pet name and species', '⚠️');
@@ -1654,6 +1721,7 @@
         species: species,
         breed: breed,
         date_of_birth: dateOfBirth,
+        sex: sex,
         notes: notes
       };
 
@@ -1680,12 +1748,7 @@
         showToast('Pet added to your profile!', '🐾');
         
         // Clear form
-        document.getElementById('pet-name').value = '';
-        document.getElementById('pet-species').value = '';
-        document.getElementById('pet-breed').value = '';
-        document.getElementById('pet-dob').value = '';
-        document.getElementById('pet-notes').value = '';
-        document.getElementById('pet-vaccination').value = '';
+        clearPetForm();
         
         // Reload pets
         loadUserPets();
@@ -1698,6 +1761,178 @@
       console.error('Add pet error:', error);
       showToast('Connection error. Please try again.', '⚠️');
     }
+  }
+
+  // Open edit pet modal with pre-filled data
+  async function openEditPetModal(petId) {
+    const token = localStorage.getItem('access_token');
+    if (!token) return;
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/v1/pets/${petId}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (response.ok) {
+        const pet = await response.json();
+        
+        // Update modal title and button
+        document.getElementById('pet-modal-title').textContent = 'Edit Pet';
+        document.getElementById('pet-modal-subtitle').textContent = `Update ${pet.name}'s information`;
+        document.getElementById('pet-modal-submit').textContent = 'Save Changes';
+        
+        // Fill form with pet data
+        document.getElementById('pet-id').value = pet.id;
+        document.getElementById('pet-name').value = pet.name;
+        document.getElementById('pet-species').value = pet.species;
+        document.getElementById('pet-breed').value = pet.breed || '';
+        document.getElementById('pet-dob').value = pet.date_of_birth || '';
+        document.getElementById('pet-sex').value = pet.sex || '';
+        document.getElementById('pet-vaccination').value = pet.last_vaccination || '';
+        document.getElementById('pet-notes').value = pet.notes || '';
+        
+        // Open modal without resetting the form
+        openModal('pet-modal', true);
+      } else {
+        showToast('Failed to load pet details', '❌');
+      }
+    } catch (error) {
+      console.error('Error loading pet:', error);
+      showToast('Connection error. Please try again.', '⚠️');
+    }
+  }
+
+  // Save pet (add or update based on pet-id)
+  async function savePet() {
+    const petId = document.getElementById('pet-id')?.value;
+    
+    if (petId) {
+      // Update existing pet
+      await updatePet(petId);
+    } else {
+      // Add new pet
+      await addPet();
+    }
+  }
+
+  // Update existing pet
+  async function updatePet(petId) {
+    const token = localStorage.getItem('access_token');
+    if (!token) return;
+
+    const name = document.getElementById('pet-name')?.value?.trim();
+    const species = document.getElementById('pet-species')?.value;
+    const breed = document.getElementById('pet-breed')?.value?.trim() || null;
+    const dateOfBirth = document.getElementById('pet-dob')?.value || null;
+    const sex = document.getElementById('pet-sex')?.value || null;
+    const notes = document.getElementById('pet-notes')?.value?.trim() || null;
+    const lastVaccination = document.getElementById('pet-vaccination')?.value || null;
+
+    if (!name || !species) {
+      showToast('Please enter pet name and species', '⚠️');
+      return;
+    }
+
+    try {
+      const petData = {
+        name: name,
+        species: species,
+        breed: breed,
+        date_of_birth: dateOfBirth,
+        sex: sex,
+        notes: notes
+      };
+
+      if (lastVaccination) {
+        petData.last_vaccination = lastVaccination;
+      }
+
+      const response = await fetch(`${API_BASE_URL}/api/v1/pets/${petId}`, {
+        method: 'PATCH',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(petData)
+      });
+
+      if (response.ok) {
+        closeModal('pet-modal');
+        showToast('Pet updated successfully!', '✓');
+        clearPetForm();
+        loadUserPets();
+      } else {
+        const error = await response.json();
+        showToast(error.detail || 'Failed to update pet', '❌');
+      }
+    } catch (error) {
+      console.error('Update pet error:', error);
+      showToast('Connection error. Please try again.', '⚠️');
+    }
+  }
+
+  // Delete pet - opens confirmation modal
+  let petToDelete = null;
+  
+  function deletePet(petId, petName) {
+    // Store pet info for confirmation
+    petToDelete = { id: petId, name: petName };
+    
+    // Update modal content
+    document.getElementById('delete-pet-subtitle').textContent = `Delete ${petName}?`;
+    document.getElementById('delete-pet-message').textContent = `Are you sure you want to delete ${petName}? This action cannot be undone.`;
+    
+    // Open confirmation modal
+    openModal('delete-pet-modal');
+  }
+  
+  // Confirm delete pet
+  async function confirmDeletePet() {
+    if (!petToDelete) return;
+    
+    const token = localStorage.getItem('access_token');
+    if (!token) return;
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/v1/pets/${petToDelete.id}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (response.ok) {
+        closeModal('delete-pet-modal');
+        showToast(`${petToDelete.name} has been removed`, '🗑️');
+        petToDelete = null;
+        loadUserPets();
+      } else {
+        const error = await response.json();
+        showToast(error.detail || 'Failed to delete pet', '❌');
+      }
+    } catch (error) {
+      console.error('Delete pet error:', error);
+      showToast('Connection error. Please try again.', '⚠️');
+    }
+  }
+
+  // Clear pet form
+  function clearPetForm() {
+    document.getElementById('pet-id').value = '';
+    document.getElementById('pet-name').value = '';
+    document.getElementById('pet-species').value = '';
+    document.getElementById('pet-breed').value = '';
+    document.getElementById('pet-dob').value = '';
+    document.getElementById('pet-sex').value = '';
+    document.getElementById('pet-vaccination').value = '';
+    document.getElementById('pet-notes').value = '';
+    
+    // Reset modal title
+    document.getElementById('pet-modal-title').textContent = 'Add a New Pet';
+    document.getElementById('pet-modal-subtitle').textContent = 'Register your pet to start booking visits';
+    document.getElementById('pet-modal-submit').textContent = 'Add Pet';
   }
 
   // ── AUTHENTICATION & API INTEGRATION ──────────────────────────────────────
@@ -2131,7 +2366,7 @@
       const bgClass = pet.species === 'dog' ? 'pet-dog' : 'pet-cat';
       
       // Calculate age
-      let ageText = 'Unknown age';
+      let ageText = '';
       if (pet.date_of_birth) {
         const birthDate = new Date(pet.date_of_birth);
         const ageYears = Math.floor((new Date() - birthDate) / (365.25 * 24 * 60 * 60 * 1000));
@@ -2139,7 +2374,7 @@
       }
 
       // Vaccination status
-      let vaccStatus = 'Unknown';
+      let vaccStatus = 'Unvaccinated';
       if (pet.last_vaccination) {
         const lastVacc = new Date(pet.last_vaccination);
         const daysSince = Math.floor((new Date() - lastVacc) / (24 * 60 * 60 * 1000));
@@ -2151,7 +2386,7 @@
           <div class="pet-avatar ${bgClass}">${emoji}</div>
           <div class="pet-info">
             <div class="pet-name">${pet.name}</div>
-            <div class="pet-detail">${pet.breed || pet.species} • ${ageText}</div>
+            <div class="pet-detail">${pet.breed || pet.species}${ageText ? ' • ' + ageText : ''}</div>
           </div>
           <div class="pet-chip">${vaccStatus}</div>
         </div>
@@ -2178,7 +2413,7 @@
       const headerClass = pet.species === 'dog' ? 'pet-header-dog' : pet.species === 'cat' ? 'pet-header-cat' : 'pet-header-other';
       
       // Calculate age
-      let ageText = 'Unknown age';
+      let ageText = '';
       if (pet.date_of_birth) {
         const birthDate = new Date(pet.date_of_birth);
         const ageYears = Math.floor((new Date() - birthDate) / (365.25 * 24 * 60 * 60 * 1000));
@@ -2202,14 +2437,15 @@
           <div class="pet-card-header ${headerClass}">${emoji}</div>
           <div class="pet-card-body">
             <div class="pet-card-name">${pet.name}</div>
-            <div class="pet-card-breed">${pet.breed || pet.species} · ${pet.sex || 'Unknown'}</div>
+            <div class="pet-card-breed">${pet.breed || pet.species}${pet.sex ? ' · ' + (pet.sex.charAt(0).toUpperCase() + pet.sex.slice(1)) : ''}</div>
             <div class="pet-card-tags">
-              <span class="tag tag-age">${ageText}</span>
+              ${ageText ? `<span class="tag tag-age">${ageText}</span>` : ''}
               <span class="tag tag-species">${pet.species.charAt(0).toUpperCase() + pet.species.slice(1)}</span>
               ${vaccTag}
             </div>
             <div class="pet-card-actions">
-              <button class="btn btn-outline" style="flex:1">Edit</button>
+              <button class="btn btn-outline" style="flex:1" onclick="openEditPetModal('${pet.id}')">Edit</button>
+              <button class="btn btn-danger" style="flex:0.5" onclick="deletePet('${pet.id}', '${pet.name}')" title="Delete pet">🗑️</button>
               <button class="btn btn-primary" style="flex:1" onclick="openModal('book-modal')">Book Visit</button>
             </div>
           </div>
