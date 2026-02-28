@@ -1,0 +1,1271 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PawCare — Vet Scheduling</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400;1,700&family=Instrument+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    /* ── Landing page palette ── */
+    --forest:        #1e3a2f;
+    --forest-mid:    #2d5040;
+    --leaf:          #4a7c59;
+    --sage:          #7aaa85;
+    --sage-light:    #b8d4bd;
+    --mint:          #d4e8d8;
+    --cream:         #f8f3ec;
+    --parchment:     #ede5d8;
+    --sand:          #d6c9b5;
+    --amber:         #c8843a;
+    --amber-light:   #e8b87a;
+    --white:         #fefcf9;
+    --text:          #1a1510;
+    --text-mid:      #4a3f35;
+    --text-light:    #8a7b6e;
+    --border:        #e0d5c5;
+    --card-bg:       #ffffff;
+    --danger:        #b94040;
+    --danger-bg:     #fdf0f0;
+    --danger-border: #f0c4c4;
+
+    --shadow-sm: 0 2px 8px rgba(30,58,47,0.07);
+    --shadow-md: 0 8px 28px rgba(30,58,47,0.11);
+    --shadow-lg: 0 20px 56px rgba(30,58,47,0.16);
+    --radius:    16px;
+    --radius-sm: 10px;
+    --radius-lg: 24px;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Instrument Sans', sans-serif;
+    background: var(--cream);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* ─── NAVBAR ─────────────────────────────────── */
+  .app-nav {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 40px;
+    height: 68px;
+    background: var(--forest);
+    border-bottom: 1px solid rgba(255,255,255,0.07);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .nav-logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-family: 'Playfair Display', serif;
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: white;
+    cursor: pointer;
+  }
+  .nav-logo span { color: var(--sage); }
+  .nav-logo svg { width: 32px; height: 32px; }
+  .nav-logo-paw {
+    width: 32px; height: 32px;
+    background: var(--sage);
+    border-radius: 9px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1rem;
+  }
+  .nav-tabs {
+    display: flex;
+    gap: 2px;
+    background: rgba(255,255,255,0.07);
+    padding: 4px;
+    border-radius: 12px;
+    border: 1px solid rgba(255,255,255,0.1);
+  }
+  .nav-tab {
+    padding: 7px 18px;
+    border-radius: 9px;
+    font-size: 0.84rem;
+    font-weight: 500;
+    color: rgba(255,255,255,0.6);
+    cursor: pointer;
+    transition: all 0.2s;
+    border: none;
+    background: transparent;
+    font-family: 'Instrument Sans', sans-serif;
+  }
+  .nav-tab:hover { color: rgba(255,255,255,0.9); }
+  .nav-tab.active {
+    background: rgba(255,255,255,0.12);
+    color: white;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.2);
+  }
+  .nav-user {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+  }
+  .avatar {
+    width: 36px; height: 36px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--sage), var(--leaf));
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.8rem; font-weight: 600; color: white;
+    border: 2px solid rgba(255,255,255,0.15);
+  }
+  .clinic-badge {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.76rem;
+    color: var(--sage-light);
+    background: rgba(122,170,133,0.15);
+    border: 1px solid rgba(122,170,133,0.25);
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-weight: 500;
+  }
+  .clinic-dot {
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    background: #5dde7a;
+    box-shadow: 0 0 6px #5dde7a;
+    animation: pulse 2s infinite;
+  }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+
+  /* ─── PAGES ──────────────────────────────────── */
+  .page { display: none; }
+  .page.active { display: block; animation: fadeIn 0.3s ease; }
+  @keyframes fadeIn { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
+
+  /* ─── DASHBOARD HERO ─────────────────────────── */
+  .dash-hero {
+    background: var(--forest);
+    padding: 52px 40px 80px;
+    position: relative;
+    overflow: hidden;
+  }
+  .dash-hero::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(ellipse at 80% 50%, rgba(74,124,89,0.18) 0%, transparent 60%),
+                radial-gradient(ellipse at 20% 80%, rgba(200,132,58,0.08) 0%, transparent 50%);
+  }
+  .dash-hero::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+    pointer-events: none;
+    opacity: 0.3;
+  }
+  .dash-hero-content { position: relative; z-index: 1; max-width: 1100px; margin: 0 auto; }
+  .dash-greeting {
+    font-family: 'Playfair Display', serif;
+    font-size: 2.4rem;
+    font-weight: 400;
+    color: white;
+    line-height: 1.15;
+    margin-bottom: 6px;
+  }
+  .dash-greeting em { font-style: italic; color: var(--amber-light); }
+  .dash-sub { color: rgba(255,255,255,0.45); font-size: 0.88rem; margin-bottom: 36px; font-weight: 300; }
+  .dash-stats { display: grid; grid-template-columns: repeat(4,1fr); gap: 14px; }
+  .stat-card {
+    background: rgba(255,255,255,0.06);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: var(--radius);
+    padding: 20px 22px;
+    transition: transform 0.2s, background 0.2s;
+  }
+  .stat-card:hover { transform: translateY(-2px); background: rgba(255,255,255,0.1); }
+  .stat-label { font-size: 0.7rem; color: rgba(255,255,255,0.45); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 8px; font-weight: 600; }
+  .stat-value { font-family: 'Playfair Display', serif; font-size: 2.2rem; font-weight: 700; color: white; line-height: 1; }
+  .stat-unit { font-size: 0.78rem; color: rgba(255,255,255,0.45); margin-top: 4px; }
+  .stat-accent { color: var(--sage-light); }
+
+  .dash-body { max-width: 1100px; margin: -32px auto 0; padding: 0 40px 60px; position: relative; z-index: 1; }
+  .dash-grid { display: grid; grid-template-columns: 1fr 340px; gap: 24px; }
+
+  /* ─── CARDS ──────────────────────────────────── */
+  .card {
+    background: var(--card-bg);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border);
+    box-shadow: var(--shadow-sm);
+    overflow: hidden;
+  }
+  .card-header {
+    padding: 20px 24px 0;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .card-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.05rem; font-weight: 700;
+    color: var(--forest);
+  }
+  .card-body { padding: 20px 24px 24px; }
+  .card-action {
+    font-size: 0.78rem;
+    color: var(--leaf);
+    cursor: pointer;
+    font-weight: 600;
+    padding: 5px 12px;
+    border-radius: 8px;
+    background: #e8f3ec;
+    border: 1px solid #c8dece;
+    transition: all 0.2s;
+    font-family: 'Instrument Sans', sans-serif;
+  }
+  .card-action:hover { background: var(--sage); color: white; border-color: var(--sage); }
+
+  /* ─── APPOINTMENT LIST ITEMS ─────────────────── */
+  .appt-item {
+    display: flex; align-items: center; gap: 14px;
+    padding: 13px 0;
+    border-bottom: 1px solid var(--border);
+    cursor: pointer;
+    transition: opacity 0.15s;
+  }
+  .appt-item:hover { opacity: 0.8; }
+  .appt-item:last-child { border-bottom: none; }
+  .appt-time-block {
+    min-width: 54px; text-align: center;
+    background: var(--parchment);
+    border-radius: 10px; padding: 7px 6px;
+    border: 1px solid var(--sand);
+  }
+  .appt-time-day { font-size: 0.62rem; color: var(--text-light); text-transform: uppercase; letter-spacing: 0.07em; font-weight: 600; }
+  .appt-time-hour { font-family: 'Playfair Display', serif; font-size: 1.1rem; font-weight: 700; color: var(--forest); line-height: 1.1; }
+  .appt-time-ampm { font-size: 0.62rem; color: var(--text-light); }
+  .appt-info { flex: 1; }
+  .appt-pet { font-weight: 500; font-size: 0.9rem; color: var(--text); }
+  .appt-service { font-size: 0.76rem; color: var(--text-light); margin-top: 2px; }
+  .appt-status {
+    font-size: 0.7rem; font-weight: 600;
+    padding: 4px 10px; border-radius: 20px;
+    text-transform: uppercase; letter-spacing: 0.05em;
+  }
+  .status-confirmed  { background: #e6f4ea; color: var(--leaf); border: 1px solid #c5dfc9; }
+  .status-pending    { background: #fef6e6; color: #9a6820; border: 1px solid #f0d89a; }
+  .status-completed  { background: #e8f3fb; color: #2a6280; border: 1px solid #b8d5ea; }
+  .status-cancelled  { background: var(--danger-bg); color: var(--danger); border: 1px solid var(--danger-border); }
+
+  /* ─── PET MINI CARDS ─────────────────────────── */
+  .pet-mini {
+    display: flex; align-items: center; gap: 12px;
+    padding: 13px 0;
+    border-bottom: 1px solid var(--border);
+    cursor: pointer;
+  }
+  .pet-mini:last-child { border-bottom: none; }
+  .pet-avatar { width: 42px; height: 42px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; flex-shrink: 0; }
+  .pet-dog { background: #fef6e8; }
+  .pet-cat { background: #f5eef9; }
+  .pet-info .pet-name { font-weight: 600; font-size: 0.88rem; color: var(--text); }
+  .pet-info .pet-detail { font-size: 0.74rem; color: var(--text-light); margin-top: 2px; }
+  .pet-chip {
+    margin-left: auto;
+    font-size: 0.68rem;
+    background: var(--parchment);
+    color: var(--text-mid);
+    padding: 3px 8px;
+    border-radius: 6px;
+    border: 1px solid var(--sand);
+    font-weight: 500;
+  }
+
+  /* ─── CLINIC STATUS CARD ─────────────────────── */
+  .clinic-status-card {
+    background: linear-gradient(135deg, rgba(30,58,47,0.06), rgba(74,124,89,0.08));
+    border: 1px solid rgba(122,170,133,0.3);
+    border-radius: var(--radius);
+    padding: 16px 18px;
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 16px;
+  }
+  .cs-left { display: flex; align-items: center; gap: 12px; }
+  .cs-icon { width: 38px; height: 38px; background: var(--forest); border-radius: 11px; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; }
+  .cs-title { font-weight: 600; font-size: 0.88rem; color: var(--forest); }
+  .cs-sub { font-size: 0.74rem; color: var(--text-light); margin-top: 2px; }
+  .cs-hours { font-family: 'Playfair Display', serif; font-size: 1.25rem; font-weight: 700; color: var(--forest); }
+
+  /* ─── PAGE HEADERS ───────────────────────────── */
+  .page-header {
+    background: var(--forest);
+    border-bottom: 1px solid rgba(255,255,255,0.07);
+    padding: 32px 40px 0;
+  }
+  .page-header-inner { max-width: 1100px; margin: 0 auto; }
+  .page-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.9rem; font-weight: 700;
+    color: white;
+  }
+  .page-subtitle { font-size: 0.86rem; color: rgba(255,255,255,0.45); margin-top: 4px; margin-bottom: 24px; font-weight: 300; }
+  .page-tabs { display: flex; gap: 0; }
+  .page-tab {
+    padding: 10px 20px;
+    font-size: 0.84rem; font-weight: 500;
+    color: rgba(255,255,255,0.45);
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    transition: all 0.2s;
+    background: none;
+    border-top: none; border-left: none; border-right: none;
+    font-family: 'Instrument Sans', sans-serif;
+  }
+  .page-tab.active { color: white; border-bottom-color: var(--amber); }
+  .page-tab:hover:not(.active) { color: rgba(255,255,255,0.7); }
+
+  .page-content { max-width: 1100px; margin: 0 auto; padding: 32px 40px 60px; }
+
+  /* ─── FILTER BAR ─────────────────────────────── */
+  .filters-bar { display: flex; gap: 10px; align-items: center; margin-bottom: 24px; flex-wrap: wrap; }
+  .filter-btn {
+    padding: 7px 16px; border-radius: 20px;
+    font-size: 0.8rem; font-weight: 500;
+    border: 1px solid var(--border);
+    background: var(--card-bg); color: var(--text-mid);
+    cursor: pointer; transition: all 0.2s;
+    font-family: 'Instrument Sans', sans-serif;
+  }
+  .filter-btn:hover, .filter-btn.active { background: var(--forest); color: white; border-color: var(--forest); }
+  .filter-select {
+    padding: 7px 14px; border-radius: 20px;
+    font-size: 0.8rem; border: 1px solid var(--border);
+    background: var(--card-bg); color: var(--text-mid);
+    font-family: 'Instrument Sans', sans-serif;
+    cursor: pointer; outline: none; margin-left: auto;
+  }
+
+  /* ─── APPOINTMENT CARDS ──────────────────────── */
+  .appt-cards { display: flex; flex-direction: column; gap: 12px; }
+  .appt-card {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px 24px;
+    display: grid;
+    grid-template-columns: auto 1px 1fr auto auto;
+    align-items: center; gap: 22px;
+    transition: box-shadow 0.2s, transform 0.2s;
+    cursor: pointer;
+  }
+  .appt-card:hover { box-shadow: var(--shadow-md); transform: translateY(-1px); }
+  .appt-card-date { text-align: center; min-width: 58px; }
+  .acd-month { font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-light); font-weight: 600; }
+  .acd-day { font-family: 'Playfair Display', serif; font-size: 2.1rem; font-weight: 900; color: var(--forest); line-height: 1; }
+  .acd-year { font-size: 0.68rem; color: var(--text-light); }
+  .appt-card-divider { width: 1px; height: 50px; background: var(--border); }
+  .aci-time { font-size: 0.78rem; color: var(--text-light); margin-bottom: 3px; }
+  .aci-pet { font-weight: 600; font-size: 0.98rem; color: var(--text); }
+  .aci-service { font-size: 0.81rem; color: var(--text-mid); margin-top: 3px; }
+  .aci-service span { display: inline-block; background: var(--parchment); padding: 2px 8px; border-radius: 6px; border: 1px solid var(--sand); font-size: 0.74rem; font-weight: 500; }
+  .appt-card-actions { display: flex; flex-direction: column; gap: 8px; align-items: flex-end; }
+
+  /* ─── BUTTONS ────────────────────────────────── */
+  .btn {
+    padding: 8px 18px; border-radius: 10px;
+    font-size: 0.82rem; font-weight: 600;
+    cursor: pointer;
+    font-family: 'Instrument Sans', sans-serif;
+    transition: all 0.2s; border: 1px solid transparent;
+  }
+  .btn-primary { background: var(--forest); color: white; }
+  .btn-primary:hover { background: var(--forest-mid); }
+  .btn-outline { background: transparent; border-color: var(--border); color: var(--text-mid); }
+  .btn-outline:hover { border-color: var(--forest); color: var(--forest); }
+  .btn-danger { background: transparent; border-color: var(--danger-border); color: var(--danger); }
+  .btn-danger:hover { background: var(--danger-bg); }
+  .btn-success { background: var(--leaf); color: white; }
+  .btn-success:hover { background: var(--forest-mid); }
+  .btn-amber { background: var(--amber); color: white; box-shadow: 0 4px 14px rgba(200,132,58,0.3); }
+  .btn-amber:hover { background: var(--amber-light); color: var(--text); }
+  .btn-lg { padding: 12px 28px; font-size: 0.9rem; border-radius: 12px; }
+
+  /* ─── BOOK CTA ───────────────────────────────── */
+  .book-cta {
+    background: var(--forest);
+    border-radius: var(--radius-lg);
+    padding: 26px 30px;
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 28px; color: white;
+    position: relative; overflow: hidden;
+  }
+  .book-cta::before {
+    content: '';
+    position: absolute; inset: 0;
+    background: radial-gradient(ellipse at 80% 50%, rgba(122,170,133,0.15) 0%, transparent 60%);
+  }
+  .book-cta-text { position: relative; z-index: 1; }
+  .book-cta-text h3 { font-family: 'Playfair Display', serif; font-size: 1.25rem; font-weight: 700; margin-bottom: 4px; }
+  .book-cta-text p { font-size: 0.83rem; opacity: 0.5; font-weight: 300; }
+  .btn-cta {
+    background: var(--amber); color: white;
+    padding: 12px 24px; border-radius: 12px;
+    font-weight: 600; border: none; cursor: pointer;
+    font-family: 'Instrument Sans', sans-serif;
+    font-size: 0.88rem;
+    box-shadow: 0 6px 18px rgba(200,132,58,0.35);
+    transition: background 0.2s, transform 0.2s;
+    position: relative; z-index: 1;
+  }
+  .btn-cta:hover { background: var(--amber-light); color: var(--text); transform: translateY(-1px); }
+
+  /* ─── PETS PAGE ───────────────────────────────── */
+  .pets-grid { display: grid; grid-template-columns: repeat(auto-fill,minmax(280px,1fr)); gap: 20px; }
+  .pet-card {
+    background: var(--card-bg); border: 1px solid var(--border);
+    border-radius: var(--radius-lg); overflow: hidden;
+    transition: box-shadow 0.25s, transform 0.25s; cursor: pointer;
+  }
+  .pet-card:hover { box-shadow: var(--shadow-md); transform: translateY(-3px); }
+  .pet-card-header {
+    height: 110px; position: relative;
+    display: flex; align-items: center; justify-content: center; font-size: 3.5rem;
+  }
+  .pet-header-dog    { background: linear-gradient(135deg, #fef9ee, #f9e4b8); }
+  .pet-header-cat    { background: linear-gradient(135deg, #f4eff8, #e5d5f0); }
+  .pet-header-rabbit { background: linear-gradient(135deg, #eef6ef, #c8dfc9); }
+  .pet-card-body { padding: 20px; }
+  .pet-card-name { font-family: 'Playfair Display', serif; font-size: 1.2rem; font-weight: 700; color: var(--forest); }
+  .pet-card-breed { font-size: 0.78rem; color: var(--text-light); margin-top: 2px; margin-bottom: 14px; }
+  .pet-card-tags { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 16px; }
+  .tag { font-size: 0.7rem; padding: 3px 9px; border-radius: 6px; font-weight: 600; }
+  .tag-age     { background: #e8f0fb; color: #2a5090; border: 1px solid #bfd0f0; }
+  .tag-species { background: var(--parchment); color: var(--text-mid); border: 1px solid var(--sand); }
+  .tag-vacc    { background: #e6f4ea; color: var(--leaf); border: 1px solid #c5dfc9; }
+  .pet-card-actions { display: flex; gap: 8px; }
+
+  /* Add Pet card */
+  .pet-add-card {
+    background: var(--parchment); border: 2px dashed var(--sand);
+    border-radius: var(--radius-lg);
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    padding: 40px 20px; cursor: pointer;
+    transition: all 0.2s; min-height: 260px;
+    color: var(--text-light); text-align: center;
+  }
+  .pet-add-card:hover { border-color: var(--sage); color: var(--leaf); background: #edf4ee; }
+  .pet-add-card .plus { font-size: 2.5rem; margin-bottom: 10px; line-height: 1; }
+  .pet-add-card p { font-size: 0.83rem; margin-top: 4px; }
+
+  /* ─── MODAL ───────────────────────────────────── */
+  .modal-overlay {
+    position: fixed; inset: 0;
+    background: rgba(20,30,20,0.6);
+    backdrop-filter: blur(6px);
+    z-index: 200; display: none;
+    align-items: center; justify-content: center; padding: 24px;
+  }
+  .modal-overlay.open { display: flex; animation: fadeIn 0.2s ease; }
+  .modal {
+    background: var(--card-bg); border-radius: var(--radius-lg);
+    width: 100%; max-width: 500px;
+    box-shadow: var(--shadow-lg); overflow: hidden;
+    border: 1px solid var(--border);
+  }
+  .modal-header {
+    padding: 24px 28px 0;
+    display: flex; align-items: flex-start; justify-content: space-between;
+    background: var(--forest);
+  }
+  .modal-title { font-family: 'Playfair Display', serif; font-size: 1.25rem; font-weight: 700; color: white; }
+  .modal-sub { font-size: 0.81rem; color: rgba(255,255,255,0.45); margin-top: 4px; padding-bottom: 20px; font-weight: 300; }
+  .modal-close {
+    background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.15);
+    width: 30px; height: 30px; border-radius: 8px; cursor: pointer;
+    font-size: 0.9rem; display: flex; align-items: center; justify-content: center;
+    color: rgba(255,255,255,0.7); transition: background 0.2s;
+    margin-top: 2px; flex-shrink: 0;
+  }
+  .modal-close:hover { background: rgba(255,255,255,0.2); color: white; }
+  .modal-body { padding: 20px 28px; }
+  .modal-footer { padding: 0 28px 24px; display: flex; gap: 10px; justify-content: flex-end; }
+
+  /* ─── FORM ELEMENTS ──────────────────────────── */
+  .form-group { margin-bottom: 16px; }
+  .form-label { font-size: 0.8rem; font-weight: 600; color: var(--text-mid); display: block; margin-bottom: 6px; letter-spacing: 0.02em; }
+  .form-input, .form-select, .form-textarea {
+    width: 100%; padding: 10px 14px;
+    border: 1px solid var(--border); border-radius: var(--radius-sm);
+    font-family: 'Instrument Sans', sans-serif;
+    font-size: 0.87rem; color: var(--text);
+    background: var(--cream);
+    transition: border-color 0.2s, box-shadow 0.2s; outline: none;
+  }
+  .form-input:focus, .form-select:focus, .form-textarea:focus {
+    border-color: var(--sage);
+    box-shadow: 0 0 0 3px rgba(122,170,133,0.18);
+    background: white;
+  }
+  .form-textarea { resize: vertical; min-height: 80px; }
+  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+
+  /* ─── SLOT PICKER ────────────────────────────── */
+  .slot-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 7px; margin-top: 8px; }
+  .slot {
+    padding: 8px; text-align: center;
+    border: 1px solid var(--border); border-radius: 8px;
+    font-size: 0.76rem; cursor: pointer;
+    transition: all 0.15s; background: var(--card-bg);
+    font-family: 'Instrument Sans', sans-serif; font-weight: 500;
+  }
+  .slot:hover { border-color: var(--sage); color: var(--leaf); background: #f0f7f1; }
+  .slot.selected { background: var(--forest); color: white; border-color: var(--forest); }
+  .slot.unavailable { opacity: 0.32; cursor: not-allowed; background: var(--parchment); }
+
+  /* ─── TOAST ──────────────────────────────────── */
+  .toast {
+    position: fixed; bottom: 28px; right: 28px; z-index: 300;
+    background: var(--forest); color: white;
+    padding: 14px 20px; border-radius: 12px;
+    font-size: 0.86rem; box-shadow: var(--shadow-lg);
+    transform: translateY(80px); opacity: 0;
+    transition: all 0.35s cubic-bezier(0.34,1.56,0.64,1);
+    display: flex; align-items: center; gap: 10px;
+    border: 1px solid rgba(255,255,255,0.1);
+  }
+  .toast.show { transform: translateY(0); opacity: 1; }
+
+  /* ─── PROFILE ────────────────────────────────── */
+  .profile-grid { display: grid; grid-template-columns: 280px 1fr; gap: 24px; }
+  .profile-card {
+    background: var(--card-bg); border: 1px solid var(--border);
+    border-radius: var(--radius-lg); padding: 28px 24px;
+    text-align: center; height: fit-content;
+  }
+  .profile-avatar {
+    width: 80px; height: 80px; border-radius: 50%;
+    background: linear-gradient(135deg, var(--forest-mid), var(--forest));
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Playfair Display', serif;
+    font-size: 1.8rem; font-weight: 700; color: white;
+    margin: 0 auto 16px;
+    border: 3px solid var(--mint);
+  }
+  .profile-name { font-family: 'Playfair Display', serif; font-size: 1.15rem; font-weight: 700; color: var(--forest); }
+  .profile-role { font-size: 0.76rem; color: var(--text-light); margin-top: 4px; }
+  .profile-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 20px; }
+  .pstat { background: var(--parchment); border-radius: 10px; padding: 14px 8px; border: 1px solid var(--sand); text-align: center; }
+  .pstat-num { font-family: 'Playfair Display', serif; font-size: 1.5rem; font-weight: 700; color: var(--forest); }
+  .pstat-label { font-size: 0.7rem; color: var(--text-light); margin-top: 2px; }
+
+  /* ─── SERVICE BADGES ─────────────────────────── */
+  .svc-vaccination { color: #2a6280; background: #e8f3fb; border: 1px solid #b8d5ea; }
+  .svc-routine     { color: var(--leaf); background: #e6f4ea; border: 1px solid #c5dfc9; }
+  .svc-surgery     { color: #7a3a8a; background: #f3edf8; border: 1px solid #d8bce8; }
+  .svc-emergency   { color: #9a4820; background: #fef0e6; border: 1px solid #f0c8a0; }
+
+  /* ─── MISC ───────────────────────────────────── */
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--sand); border-radius: 3px; }
+
+  .empty-state { text-align: center; padding: 60px 20px; color: var(--text-light); }
+  .empty-state .icon { font-size: 3rem; margin-bottom: 12px; }
+  .empty-state h3 { font-family: 'Playfair Display', serif; font-size: 1.1rem; color: var(--text-mid); margin-bottom: 6px; }
+  .empty-state p { font-size: 0.83rem; }
+
+  @media (max-width: 768px) {
+    .app-nav { padding: 0 20px; }
+    .dash-hero { padding: 32px 20px 60px; }
+    .dash-stats { grid-template-columns: repeat(2,1fr); }
+    .dash-body { padding: 0 20px 40px; }
+    .dash-grid { grid-template-columns: 1fr; }
+    .page-header { padding: 24px 20px 0; }
+    .page-content { padding: 24px 20px 40px; }
+    .appt-card { grid-template-columns: auto 1fr; }
+    .appt-card-divider { display: none; }
+    .appt-card-actions { flex-direction: row; grid-column: 1/-1; }
+    .profile-grid { grid-template-columns: 1fr; }
+    .form-row { grid-template-columns: 1fr; }
+    .slot-grid { grid-template-columns: repeat(3,1fr); }
+  }
+</style>
+</head>
+<body>
+
+<!-- ─── NAVBAR ─────────────────────────────────── -->
+<nav class="app-nav">
+  <div class="nav-logo" onclick="showPage('dashboard')">
+    <div class="nav-logo-paw">🐾</div>
+    Paw<span>Care</span>
+  </div>
+  <div class="nav-tabs">
+    <button class="nav-tab active" onclick="showPage('dashboard', this)">Dashboard</button>
+    <button class="nav-tab" onclick="showPage('appointments', this)">Appointments</button>
+    <button class="nav-tab" onclick="showPage('pets', this)">My Pets</button>
+    <button class="nav-tab" onclick="showPage('profile', this)">Profile</button>
+  </div>
+  <div class="nav-user">
+    <div class="clinic-badge"><div class="clinic-dot"></div>Clinic Open</div>
+    <div class="avatar">MR</div>
+  </div>
+</nav>
+
+<!-- ─── DASHBOARD PAGE ─────────────────────────── -->
+<div id="page-dashboard" class="page active">
+  <div class="dash-hero">
+    <div class="dash-hero-content">
+      <div class="dash-greeting">Good morning, <em>Maria!</em></div>
+      <div class="dash-sub">Saturday, February 28, 2026 · Philippine Standard Time</div>
+      <div class="dash-stats">
+        <div class="stat-card">
+          <div class="stat-label">Upcoming</div>
+          <div class="stat-value">3<span class="stat-accent" style="font-size:1.2rem"> appts</span></div>
+          <div class="stat-unit">this week</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">My Pets</div>
+          <div class="stat-value">3</div>
+          <div class="stat-unit">registered</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Next Visit</div>
+          <div class="stat-value" style="font-size:1.5rem">Mar 3</div>
+          <div class="stat-unit">Routine checkup — Noodles</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Total Visits</div>
+          <div class="stat-value">12</div>
+          <div class="stat-unit">all time</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="dash-body">
+    <div class="dash-grid">
+      <div>
+        <!-- Upcoming appointments -->
+        <div class="card" style="margin-bottom:20px">
+          <div class="card-header">
+            <div class="card-title">Upcoming Appointments</div>
+            <button class="card-action" onclick="showPage('appointments', document.querySelectorAll('.nav-tab')[1])">View all</button>
+          </div>
+          <div class="card-body">
+            <div class="appt-item">
+              <div class="appt-time-block">
+                <div class="appt-time-day">Mon</div>
+                <div class="appt-time-hour">9:00</div>
+                <div class="appt-time-ampm">AM</div>
+              </div>
+              <div class="appt-info">
+                <div class="appt-pet">🐶 Noodles — Shih Tzu</div>
+                <div class="appt-service">Routine Check-up · 45 min</div>
+              </div>
+              <div class="appt-status status-confirmed">Confirmed</div>
+            </div>
+            <div class="appt-item">
+              <div class="appt-time-block">
+                <div class="appt-time-day">Wed</div>
+                <div class="appt-time-hour">2:30</div>
+                <div class="appt-time-ampm">PM</div>
+              </div>
+              <div class="appt-info">
+                <div class="appt-pet">🐱 Mochi — Persian Cat</div>
+                <div class="appt-service">Vaccination · 30 min</div>
+              </div>
+              <div class="appt-status status-pending">Pending</div>
+            </div>
+            <div class="appt-item">
+              <div class="appt-time-block">
+                <div class="appt-time-day">Fri</div>
+                <div class="appt-time-hour">11:00</div>
+                <div class="appt-time-ampm">AM</div>
+              </div>
+              <div class="appt-info">
+                <div class="appt-pet">🐶 Noodles — Shih Tzu</div>
+                <div class="appt-service">Surgery Consult · 2 hrs</div>
+              </div>
+              <div class="appt-status status-confirmed">Confirmed</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Book CTA -->
+        <div class="book-cta">
+          <div class="book-cta-text">
+            <h3>Ready to schedule a visit?</h3>
+            <p>Available slots open daily 8:00 AM – 8:00 PM PHT</p>
+          </div>
+          <button class="btn-cta" onclick="openModal('book-modal')">+ Book Appointment</button>
+        </div>
+      </div>
+
+      <div>
+        <!-- Clinic Status -->
+        <div class="clinic-status-card">
+          <div class="cs-left">
+            <div class="cs-icon">🏥</div>
+            <div>
+              <div class="cs-title">Clinic is Open</div>
+              <div class="cs-sub">Walk-ins & appointments welcome</div>
+            </div>
+          </div>
+          <div class="cs-hours">8AM–8PM</div>
+        </div>
+
+        <!-- My Pets -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">My Pets</div>
+            <button class="card-action" onclick="showPage('pets', document.querySelectorAll('.nav-tab')[2])">Manage</button>
+          </div>
+          <div class="card-body">
+            <div class="pet-mini">
+              <div class="pet-avatar pet-dog">🐶</div>
+              <div class="pet-info">
+                <div class="pet-name">Noodles</div>
+                <div class="pet-detail">Shih Tzu · 4 yrs · M</div>
+              </div>
+              <div class="pet-chip">Vaccinated ✓</div>
+            </div>
+            <div class="pet-mini">
+              <div class="pet-avatar pet-cat">🐱</div>
+              <div class="pet-info">
+                <div class="pet-name">Mochi</div>
+                <div class="pet-detail">Persian · 2 yrs · F</div>
+              </div>
+              <div class="pet-chip">Due soon ⚠️</div>
+            </div>
+            <div class="pet-mini">
+              <div class="pet-avatar pet-dog">🐕</div>
+              <div class="pet-info">
+                <div class="pet-name">Dumpling</div>
+                <div class="pet-detail">Aspin · 1 yr · M</div>
+              </div>
+              <div class="pet-chip">Vaccinated ✓</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ─── APPOINTMENTS PAGE ──────────────────────── -->
+<div id="page-appointments" class="page">
+  <div class="page-header">
+    <div class="page-header-inner">
+      <div class="page-title">Appointments</div>
+      <div class="page-subtitle">Manage all your scheduled visits</div>
+      <div class="page-tabs">
+        <button class="page-tab active" onclick="filterAppts('all', this)">All</button>
+        <button class="page-tab" onclick="filterAppts('upcoming', this)">Upcoming</button>
+        <button class="page-tab" onclick="filterAppts('completed', this)">Completed</button>
+        <button class="page-tab" onclick="filterAppts('cancelled', this)">Cancelled</button>
+      </div>
+    </div>
+  </div>
+  <div class="page-content">
+    <div class="filters-bar">
+      <button class="filter-btn active" onclick="setFilter(this)">All Pets</button>
+      <button class="filter-btn" onclick="setFilter(this)">Noodles</button>
+      <button class="filter-btn" onclick="setFilter(this)">Mochi</button>
+      <button class="filter-btn" onclick="setFilter(this)">Dumpling</button>
+      <select class="filter-select">
+        <option>Sort: Newest first</option>
+        <option>Sort: Oldest first</option>
+        <option>Sort: Status</option>
+      </select>
+      <button class="btn btn-primary" onclick="openModal('book-modal')" style="margin-left:8px">+ Book New</button>
+    </div>
+
+    <div class="appt-cards">
+      <!-- Confirmed -->
+      <div class="appt-card">
+        <div class="appt-card-date">
+          <div class="acd-month">Mar</div>
+          <div class="acd-day">3</div>
+          <div class="acd-year">2026</div>
+        </div>
+        <div class="appt-card-divider"></div>
+        <div class="appt-card-info">
+          <div class="aci-time">Mon · 9:00 AM – 9:45 AM</div>
+          <div class="aci-pet">🐶 Noodles</div>
+          <div class="aci-service"><span class="svc-routine">Routine Check-up</span></div>
+        </div>
+        <div class="appt-status status-confirmed" style="align-self:flex-start">Confirmed</div>
+        <div class="appt-card-actions">
+          <button class="btn btn-outline" onclick="openModal('reschedule-modal')">Reschedule</button>
+          <button class="btn btn-danger">Cancel</button>
+        </div>
+      </div>
+
+      <!-- Pending -->
+      <div class="appt-card">
+        <div class="appt-card-date">
+          <div class="acd-month">Mar</div>
+          <div class="acd-day">5</div>
+          <div class="acd-year">2026</div>
+        </div>
+        <div class="appt-card-divider"></div>
+        <div class="appt-card-info">
+          <div class="aci-time">Wed · 2:30 PM – 3:00 PM</div>
+          <div class="aci-pet">🐱 Mochi</div>
+          <div class="aci-service"><span class="svc-vaccination">Vaccination</span></div>
+        </div>
+        <div class="appt-status status-pending" style="align-self:flex-start">Pending</div>
+        <div class="appt-card-actions">
+          <button class="btn btn-outline" onclick="openModal('reschedule-modal')">Reschedule</button>
+          <button class="btn btn-danger">Cancel</button>
+        </div>
+      </div>
+
+      <!-- Confirmed surgery -->
+      <div class="appt-card">
+        <div class="appt-card-date">
+          <div class="acd-month">Mar</div>
+          <div class="acd-day">7</div>
+          <div class="acd-year">2026</div>
+        </div>
+        <div class="appt-card-divider"></div>
+        <div class="appt-card-info">
+          <div class="aci-time">Fri · 11:00 AM – 1:00 PM</div>
+          <div class="aci-pet">🐶 Noodles</div>
+          <div class="aci-service"><span class="svc-surgery">Surgery Consult</span></div>
+        </div>
+        <div class="appt-status status-confirmed" style="align-self:flex-start">Confirmed</div>
+        <div class="appt-card-actions">
+          <button class="btn btn-outline" onclick="openModal('reschedule-modal')">Reschedule</button>
+          <button class="btn btn-danger">Cancel</button>
+        </div>
+      </div>
+
+      <!-- Completed -->
+      <div class="appt-card" style="opacity:0.75">
+        <div class="appt-card-date">
+          <div class="acd-month">Feb</div>
+          <div class="acd-day">10</div>
+          <div class="acd-year">2026</div>
+        </div>
+        <div class="appt-card-divider"></div>
+        <div class="appt-card-info">
+          <div class="aci-time">Tue · 10:00 AM – 10:30 AM</div>
+          <div class="aci-pet">🐕 Dumpling</div>
+          <div class="aci-service"><span class="svc-vaccination">Vaccination</span></div>
+        </div>
+        <div class="appt-status status-completed" style="align-self:flex-start">Completed</div>
+        <div class="appt-card-actions">
+          <button class="btn btn-outline" disabled style="opacity:0.4;cursor:not-allowed">Reschedule</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ─── PETS PAGE ───────────────────────────────── -->
+<div id="page-pets" class="page">
+  <div class="page-header">
+    <div class="page-header-inner">
+      <div class="page-title">My Pets</div>
+      <div class="page-subtitle">Manage your furry family members</div>
+      <div style="height:24px"></div>
+    </div>
+  </div>
+  <div class="page-content">
+    <div class="pets-grid">
+      <!-- Noodles -->
+      <div class="pet-card">
+        <div class="pet-card-header pet-header-dog">🐶</div>
+        <div class="pet-card-body">
+          <div class="pet-card-name">Noodles</div>
+          <div class="pet-card-breed">Shih Tzu · Male</div>
+          <div class="pet-card-tags">
+            <span class="tag tag-age">4 years old</span>
+            <span class="tag tag-species">Dog</span>
+            <span class="tag tag-vacc">Vaccinated ✓</span>
+          </div>
+          <div class="pet-card-actions">
+            <button class="btn btn-outline" style="flex:1">Edit</button>
+            <button class="btn btn-primary" style="flex:1" onclick="openModal('book-modal')">Book Visit</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Mochi -->
+      <div class="pet-card">
+        <div class="pet-card-header pet-header-cat">🐱</div>
+        <div class="pet-card-body">
+          <div class="pet-card-name">Mochi</div>
+          <div class="pet-card-breed">Persian · Female</div>
+          <div class="pet-card-tags">
+            <span class="tag tag-age">2 years old</span>
+            <span class="tag tag-species">Cat</span>
+            <span class="tag" style="background:#fff3e0;color:#e65100">Vaccine Due ⚠️</span>
+          </div>
+          <div class="pet-card-actions">
+            <button class="btn btn-outline" style="flex:1">Edit</button>
+            <button class="btn btn-primary" style="flex:1" onclick="openModal('book-modal')">Book Visit</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Dumpling -->
+      <div class="pet-card">
+        <div class="pet-card-header pet-header-dog">🐕</div>
+        <div class="pet-card-body">
+          <div class="pet-card-name">Dumpling</div>
+          <div class="pet-card-breed">Aspin · Male</div>
+          <div class="pet-card-tags">
+            <span class="tag tag-age">1 year old</span>
+            <span class="tag tag-species">Dog</span>
+            <span class="tag tag-vacc">Vaccinated ✓</span>
+          </div>
+          <div class="pet-card-actions">
+            <button class="btn btn-outline" style="flex:1">Edit</button>
+            <button class="btn btn-primary" style="flex:1" onclick="openModal('book-modal')">Book Visit</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Add new -->
+      <div class="pet-add-card" onclick="openModal('pet-modal')">
+        <div class="plus">🐾</div>
+        <strong>Add a New Pet</strong>
+        <p>Register a pet to start booking appointments</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ─── PROFILE PAGE ─────────────────────────── -->
+<div id="page-profile" class="page">
+  <div class="page-header">
+    <div class="page-header-inner">
+      <div class="page-title">Profile</div>
+      <div class="page-subtitle">Manage your account details</div>
+      <div style="height:24px"></div>
+    </div>
+  </div>
+  <div class="page-content">
+    <div class="profile-grid">
+      <div>
+        <div class="profile-card">
+          <div class="profile-avatar">MR</div>
+          <div class="profile-name">Maria Reyes</div>
+          <div class="profile-role">Pet Owner · Active</div>
+          <div class="profile-stats">
+            <div class="pstat"><div class="pstat-num">3</div><div class="pstat-label">Pets</div></div>
+            <div class="pstat"><div class="pstat-num">12</div><div class="pstat-label">Visits</div></div>
+            <div class="pstat"><div class="pstat-num">3</div><div class="pstat-label">Upcoming</div></div>
+            <div class="pstat"><div class="pstat-num">9</div><div class="pstat-label">Completed</div></div>
+          </div>
+        </div>
+      </div>
+      <div>
+        <div class="card">
+          <div class="card-header" style="padding-bottom:0">
+            <div class="card-title">Personal Information</div>
+            <button class="card-action">Save Changes</button>
+          </div>
+          <div class="card-body">
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label">Full Name</label>
+                <input class="form-input" type="text" value="Maria Reyes">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Email Address</label>
+                <input class="form-input" type="email" value="maria.reyes@email.com">
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label">Phone Number</label>
+                <input class="form-input" type="tel" value="+63 917 123 4567">
+              </div>
+              <div class="form-group">
+                <label class="form-label">City</label>
+                <input class="form-input" type="text" value="Quezon City">
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Preferences / Notes</label>
+              <textarea class="form-textarea">Prefers morning appointments. Dogs are anxious — please handle gently.</textarea>
+            </div>
+          </div>
+        </div>
+        <div class="card" style="margin-top:16px">
+          <div class="card-header">
+            <div class="card-title">Security</div>
+          </div>
+          <div class="card-body">
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label">Current Password</label>
+                <input class="form-input" type="password" placeholder="••••••••">
+              </div>
+              <div class="form-group">
+                <label class="form-label">New Password</label>
+                <input class="form-input" type="password" placeholder="Min. 8 characters">
+              </div>
+            </div>
+            <button class="btn btn-primary">Update Password</button>
+          </div>
+        </div>
+        <div class="card" style="margin-top:16px; border-color:var(--danger-border);">
+          <div class="card-header">
+            <div class="card-title" style="color:var(--danger)">Danger Zone</div>
+          </div>
+          <div class="card-body">
+            <p style="font-size:0.85rem;color:var(--text-light);margin-bottom:14px">Permanently delete your account and all associated data. This action cannot be undone.</p>
+            <button class="btn btn-danger">Delete Account</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ─── MODALS ─────────────────────────────────── -->
+
+<!-- Book Appointment Modal -->
+<div class="modal-overlay" id="book-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <div>
+        <div class="modal-title">Book an Appointment</div>
+        <div class="modal-sub">All times are Philippine Standard Time (UTC+8)</div>
+      </div>
+      <button class="modal-close" onclick="closeModal('book-modal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Select Pet</label>
+          <select class="form-select">
+            <option>🐶 Noodles</option>
+            <option>🐱 Mochi</option>
+            <option>🐕 Dumpling</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Service Type</label>
+          <select class="form-select">
+            <option>Routine Check-up (45 min)</option>
+            <option>Vaccination (30 min)</option>
+            <option>Surgery Consult (2 hrs)</option>
+            <option>Emergency (15 min)</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Preferred Date</label>
+        <input class="form-input" type="date" min="2026-02-28" value="2026-03-05">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Available Time Slots</label>
+        <div class="slot-grid">
+          <div class="slot">8:00 AM</div>
+          <div class="slot">8:30 AM</div>
+          <div class="slot unavailable">9:00 AM</div>
+          <div class="slot">9:30 AM</div>
+          <div class="slot unavailable">10:00 AM</div>
+          <div class="slot selected">10:30 AM</div>
+          <div class="slot">11:00 AM</div>
+          <div class="slot">11:30 AM</div>
+          <div class="slot unavailable">1:00 PM</div>
+          <div class="slot">1:30 PM</div>
+          <div class="slot">2:00 PM</div>
+          <div class="slot">2:30 PM</div>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Notes (optional)</label>
+        <textarea class="form-textarea" placeholder="Any special concerns or instructions…"></textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('book-modal')">Cancel</button>
+      <button class="btn btn-primary btn-lg" onclick="bookAppt()">Confirm Booking</button>
+    </div>
+  </div>
+</div>
+
+<!-- Reschedule Modal -->
+<div class="modal-overlay" id="reschedule-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <div>
+        <div class="modal-title">Reschedule Appointment</div>
+        <div class="modal-sub">🐶 Noodles · Routine Check-up</div>
+      </div>
+      <button class="modal-close" onclick="closeModal('reschedule-modal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label class="form-label">New Date & Time</label>
+        <input class="form-input" type="datetime-local" value="2026-03-10T09:00">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Available Time Slots</label>
+        <div class="slot-grid">
+          <div class="slot">8:00 AM</div>
+          <div class="slot">8:30 AM</div>
+          <div class="slot selected">9:00 AM</div>
+          <div class="slot">9:30 AM</div>
+          <div class="slot unavailable">10:00 AM</div>
+          <div class="slot">10:30 AM</div>
+          <div class="slot">11:00 AM</div>
+          <div class="slot unavailable">11:30 AM</div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('reschedule-modal')">Cancel</button>
+      <button class="btn btn-success btn-lg" onclick="rescheduleAppt()">Confirm Reschedule</button>
+    </div>
+  </div>
+</div>
+
+<!-- Add Pet Modal -->
+<div class="modal-overlay" id="pet-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <div>
+        <div class="modal-title">Add a New Pet</div>
+        <div class="modal-sub">Register your pet to start booking visits</div>
+      </div>
+      <button class="modal-close" onclick="closeModal('pet-modal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Pet Name</label>
+          <input class="form-input" type="text" placeholder="e.g. Pancake">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Species</label>
+          <select class="form-select">
+            <option>Dog</option>
+            <option>Cat</option>
+            <option>Rabbit</option>
+            <option>Bird</option>
+            <option>Other</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Breed</label>
+          <input class="form-input" type="text" placeholder="e.g. Golden Retriever">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Date of Birth</label>
+          <input class="form-input" type="date" max="2026-02-28">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Sex</label>
+          <select class="form-select">
+            <option>Male</option>
+            <option>Female</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Last Vaccination</label>
+          <input class="form-input" type="date" max="2026-02-28">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Medical History / Notes</label>
+        <textarea class="form-textarea" placeholder="Any known conditions, allergies, or important history…"></textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('pet-modal')">Cancel</button>
+      <button class="btn btn-primary btn-lg" onclick="addPet()">Add Pet</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast">
+  <span id="toast-icon">✓</span>
+  <span id="toast-msg">Action completed</span>
+</div>
+
+<script>
+  // ── Page navigation ──────────────────────────────────
+  function showPage(name, tabEl) {
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    document.getElementById('page-' + name).classList.add('active');
+    if (tabEl) {
+      document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+      tabEl.classList.add('active');
+    }
+  }
+
+  // ── Appointment tab filter ────────────────────────────
+  function filterAppts(type, el) {
+    document.querySelectorAll('.page-tab').forEach(t => t.classList.remove('active'));
+    el.classList.add('active');
+  }
+
+  function setFilter(el) {
+    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+    el.classList.add('active');
+  }
+
+  // ── Slot selection ────────────────────────────────────
+  document.querySelectorAll('.slot:not(.unavailable)').forEach(slot => {
+    slot.addEventListener('click', function() {
+      const grid = this.closest('.slot-grid');
+      grid.querySelectorAll('.slot').forEach(s => s.classList.remove('selected'));
+      this.classList.add('selected');
+    });
+  });
+
+  // ── Modals ────────────────────────────────────────────
+  function openModal(id) {
+    document.getElementById(id).classList.add('open');
+    document.body.style.overflow = 'hidden';
+  }
+  function closeModal(id) {
+    document.getElementById(id).classList.remove('open');
+    document.body.style.overflow = '';
+  }
+  document.querySelectorAll('.modal-overlay').forEach(overlay => {
+    overlay.addEventListener('click', function(e) {
+      if (e.target === this) closeModal(this.id);
+    });
+  });
+
+  // ── Toast ─────────────────────────────────────────────
+  function showToast(msg, icon = '✓') {
+    const toast = document.getElementById('toast');
+    document.getElementById('toast-msg').textContent = msg;
+    document.getElementById('toast-icon').textContent = icon;
+    toast.classList.add('show');
+    setTimeout(() => toast.classList.remove('show'), 3200);
+  }
+
+  function bookAppt() {
+    closeModal('book-modal');
+    showToast('Appointment booked! Awaiting confirmation.', '📅');
+  }
+  function rescheduleAppt() {
+    closeModal('reschedule-modal');
+    showToast('Appointment rescheduled successfully!', '✓');
+  }
+  function addPet() {
+    closeModal('pet-modal');
+    showToast('Pet added to your profile!', '🐾');
+  }
+</script>
+</body>
+</html>

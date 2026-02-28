@@ -85,7 +85,17 @@ class AuthService:
             raise BadRequestException("Email already registered")
         
         # Determine role based on email (Requirements 1.2, 1.3)
-        role = "admin" if email == config.ADMIN_EMAIL else "pet_owner"
+        # Check if email matches admin pattern:
+        # - admin@vetclinic.com (main admin)
+        # - admin+*@vetclinic.com (admin with suffix)
+        # - admin1@vetclinic.com, admin2@vetclinic.com, etc. (numbered admins)
+        import re
+        is_admin = (
+            email == config.ADMIN_EMAIL or 
+            (email.startswith("admin+") and email.endswith("@vetclinic.com")) or
+            (re.match(r'^admin\d+@vetclinic\.com$', email) is not None)
+        )
+        role = "admin" if is_admin else "pet_owner"
         logger.debug(f"Assigning role '{role}' to user {email}")
         
         # Hash password (Requirement 1.7) - validation happens in hash_password

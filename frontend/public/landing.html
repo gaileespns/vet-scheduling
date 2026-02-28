@@ -1,0 +1,1337 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PawCare — Veterinary Scheduling</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400;1,700&family=Instrument+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --forest:   #1e3a2f;
+  --forest-mid: #2d5040;
+  --leaf:     #4a7c59;
+  --sage:     #7aaa85;
+  --mint:     #b8d4bd;
+  --cream:    #f8f3ec;
+  --parchment:#ede5d8;
+  --sand:     #d6c9b5;
+  --bark:     #3d2b1f;
+  --amber:    #c8843a;
+  --amber-light: #e8b87a;
+  --white:    #fefcf9;
+  --text:     #1a1510;
+  --text-mid: #4a3f35;
+  --text-muted: #8a7b6e;
+}
+
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: 'Instrument Sans', sans-serif;
+  background: var(--cream);
+  color: var(--text);
+  overflow-x: hidden;
+  cursor: none;
+}
+
+/* ── CUSTOM CURSOR ─────────────────────────────── */
+.cursor {
+  width: 14px; height: 14px;
+  background: white;
+  border: 2px solid var(--forest);
+  border-radius: 50%;
+  position: fixed;
+  pointer-events: none;
+  z-index: 9999;
+  transition: transform 0.15s ease, background 0.2s, border-color 0.2s;
+  transform: translate(-50%, -50%);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+}
+.cursor-ring {
+  width: 40px; height: 40px;
+  border: 2px solid var(--amber);
+  border-radius: 50%;
+  position: fixed;
+  pointer-events: none;
+  z-index: 9998;
+  transition: transform 0.35s cubic-bezier(0.23,1,0.32,1), opacity 0.2s, width 0.2s, height 0.2s;
+  transform: translate(-50%, -50%);
+  opacity: 0.6;
+  box-shadow: 0 2px 12px rgba(200,132,58,0.3);
+}
+body:has(a:hover) .cursor, body:has(button:hover) .cursor { 
+  transform: translate(-50%,-50%) scale(2.5); 
+  background: var(--amber); 
+  border-color: var(--amber-light);
+}
+body:has(a:hover) .cursor-ring, body:has(button:hover) .cursor-ring { 
+  width: 64px; height: 64px; 
+  opacity: 0.4; 
+  border-color: var(--amber-light); 
+}
+
+/* ── NAVBAR ────────────────────────────────────── */
+nav {
+  position: fixed; top: 0; left: 0; right: 0;
+  z-index: 100;
+  padding: 0 60px;
+  height: 72px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: rgba(20, 45, 32, 0.55);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid rgba(255,255,255,0.07);
+  transition: background 0.4s, box-shadow 0.4s, border-color 0.4s;
+}
+nav.scrolled {
+  background: rgba(248,243,236,0.95);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--sand);
+  box-shadow: 0 2px 24px rgba(61,43,31,0.08);
+}
+.nav-logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-family: 'Playfair Display', serif;
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: white;
+  text-decoration: none;
+  transition: color 0.4s;
+}
+nav.scrolled .nav-logo { color: var(--forest); }
+.logo-paw {
+  width: 36px; height: 36px;
+  background: var(--sage);
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.1rem;
+}
+.nav-links {
+  display: flex;
+  align-items: center;
+  gap: 36px;
+  list-style: none;
+}
+.nav-links a {
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: rgba(255,255,255,0.72);
+  text-decoration: none;
+  letter-spacing: 0.03em;
+  transition: color 0.2s;
+}
+.nav-links a:hover { color: white; }
+nav.scrolled .nav-links a { color: var(--text-mid); }
+nav.scrolled .nav-links a:hover { color: var(--forest); }
+.nav-cta {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.btn-nav-ghost {
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: rgba(255,255,255,0.78);
+  text-decoration: none;
+  padding: 8px 20px;
+  border-radius: 8px;
+  transition: background 0.2s, color 0.4s;
+  font-family: 'Instrument Sans', sans-serif;
+  border: none;
+  background: none;
+  cursor: none;
+}
+.btn-nav-ghost:hover { background: rgba(255,255,255,0.1); color: white; }
+nav.scrolled .btn-nav-ghost { color: var(--forest); }
+nav.scrolled .btn-nav-ghost:hover { background: var(--parchment); color: var(--forest); }
+.btn-nav-fill {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--forest);
+  background: white;
+  padding: 9px 22px;
+  border-radius: 10px;
+  text-decoration: none;
+  transition: background 0.2s, transform 0.15s, color 0.4s;
+  font-family: 'Instrument Sans', sans-serif;
+  border: none;
+  cursor: none;
+}
+.btn-nav-fill:hover { background: var(--mint); transform: translateY(-1px); }
+nav.scrolled .btn-nav-fill { background: var(--forest); color: white; }
+nav.scrolled .btn-nav-fill:hover { background: var(--forest-mid); }
+
+/* ── HERO ──────────────────────────────────────── */
+.hero {
+  min-height: 100vh;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  align-items: center;
+  position: relative;
+  overflow: hidden;
+  background: var(--forest);
+}
+
+/* Organic background shapes */
+.hero-bg {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+}
+.hero-blob {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(80px);
+  opacity: 0.18;
+}
+.hero-blob-1 { width: 600px; height: 600px; background: var(--sage); top: -100px; right: -100px; animation: blobDrift1 12s ease-in-out infinite; }
+.hero-blob-2 { width: 400px; height: 400px; background: var(--amber); bottom: -50px; left: 200px; animation: blobDrift2 15s ease-in-out infinite; }
+.hero-blob-3 { width: 300px; height: 300px; background: var(--mint); top: 40%; left: -80px; animation: blobDrift3 10s ease-in-out infinite; }
+@keyframes blobDrift1 { 0%,100%{transform:translate(0,0) scale(1)} 50%{transform:translate(-30px,40px) scale(1.08)} }
+@keyframes blobDrift2 { 0%,100%{transform:translate(0,0) scale(1)} 50%{transform:translate(40px,-30px) scale(0.95)} }
+@keyframes blobDrift3 { 0%,100%{transform:translate(0,0) scale(1)} 50%{transform:translate(20px,30px) scale(1.05)} }
+
+/* Grain texture overlay */
+.hero::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+  pointer-events: none;
+  opacity: 0.4;
+}
+
+.hero-left {
+  padding: 120px 60px 80px 80px;
+  position: relative;
+  z-index: 2;
+}
+.hero-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.14);
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--mint);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  margin-bottom: 28px;
+  opacity: 0;
+  animation: slideUp 0.8s 0.2s ease forwards;
+}
+.eyebrow-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--sage); }
+
+.hero-h1 {
+  font-family: 'Playfair Display', serif;
+  font-size: clamp(3rem, 5vw, 5.2rem);
+  font-weight: 900;
+  line-height: 1.02;
+  color: var(--white);
+  margin-bottom: 28px;
+  opacity: 0;
+  animation: slideUp 0.9s 0.35s ease forwards;
+}
+.hero-h1 em {
+  font-style: italic;
+  color: var(--amber-light);
+  display: block;
+}
+.hero-sub {
+  font-size: 1rem;
+  color: rgba(255,255,255,0.55);
+  line-height: 1.7;
+  max-width: 440px;
+  margin-bottom: 44px;
+  font-weight: 300;
+  opacity: 0;
+  animation: slideUp 0.9s 0.5s ease forwards;
+}
+.hero-actions {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  opacity: 0;
+  animation: slideUp 0.9s 0.65s ease forwards;
+}
+.btn-hero-primary {
+  background: var(--amber);
+  color: var(--white);
+  padding: 14px 32px;
+  border-radius: 12px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  text-decoration: none;
+  font-family: 'Instrument Sans', sans-serif;
+  border: none;
+  cursor: none;
+  transition: background 0.2s, transform 0.2s, box-shadow 0.2s;
+  box-shadow: 0 8px 24px rgba(200,132,58,0.35);
+}
+.btn-hero-primary:hover { background: var(--amber-light); transform: translateY(-2px); box-shadow: 0 12px 32px rgba(200,132,58,0.45); }
+.btn-hero-ghost {
+  color: rgba(255,255,255,0.6);
+  font-size: 0.88rem;
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: color 0.2s;
+  font-weight: 400;
+  cursor: none;
+}
+.btn-hero-ghost:hover { color: white; }
+.play-btn {
+  width: 36px; height: 36px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.12);
+  border: 1px solid rgba(255,255,255,0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.7rem;
+  color: white;
+  transition: background 0.2s;
+}
+.btn-hero-ghost:hover .play-btn { background: rgba(255,255,255,0.22); }
+
+.hero-social-proof {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-top: 52px;
+  opacity: 0;
+  animation: slideUp 0.9s 0.8s ease forwards;
+}
+.avatars-stack {
+  display: flex;
+}
+.avatars-stack .av {
+  width: 32px; height: 32px;
+  border-radius: 50%;
+  border: 2px solid var(--forest);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  font-weight: 600;
+  margin-left: -8px;
+  color: white;
+}
+.avatars-stack .av:first-child { margin-left: 0; }
+.av-1 { background: #5b8a6a; }
+.av-2 { background: #8b6e4e; }
+.av-3 { background: #4a7080; }
+.av-4 { background: var(--amber); }
+.social-text { font-size: 0.8rem; color: rgba(255,255,255,0.5); }
+.social-text strong { color: rgba(255,255,255,0.85); }
+
+/* Hero right visual */
+.hero-right {
+  position: relative;
+  z-index: 2;
+  height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 100px 80px 80px 20px;
+  opacity: 0;
+  animation: fadeInRight 1.1s 0.4s ease forwards;
+}
+@keyframes fadeInRight { from { opacity:0; transform:translateX(40px); } to { opacity:1; transform:translateX(0); } }
+
+.hero-card-cluster {
+  position: relative;
+  width: 360px;
+  height: 480px;
+}
+.hcard {
+  position: absolute;
+  background: rgba(255,255,255,0.07);
+  backdrop-filter: blur(16px);
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 20px;
+  padding: 20px;
+  transition: transform 0.3s ease;
+}
+.hcard:hover { transform: translateY(-4px) !important; }
+
+/* Main appointment card */
+.hcard-main {
+  width: 300px;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 3;
+  background: rgba(255,255,255,0.1);
+}
+.hcard-top {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+.hcard-icon {
+  width: 44px; height: 44px;
+  background: var(--sage);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.3rem;
+  flex-shrink: 0;
+}
+.hcard-label { font-size: 0.7rem; color: rgba(255,255,255,0.45); text-transform: uppercase; letter-spacing: 0.08em; }
+.hcard-name { font-size: 1rem; font-weight: 600; color: white; }
+.hcard-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+.hcard-key { font-size: 0.75rem; color: rgba(255,255,255,0.4); }
+.hcard-val { font-size: 0.8rem; color: rgba(255,255,255,0.85); font-weight: 500; }
+.hcard-badge {
+  display: inline-block;
+  background: rgba(74,124,89,0.4);
+  border: 1px solid rgba(122,170,133,0.4);
+  color: var(--mint);
+  font-size: 0.7rem;
+  padding: 3px 10px;
+  border-radius: 12px;
+}
+.hcard-time-bar {
+  background: rgba(255,255,255,0.06);
+  border-radius: 10px;
+  padding: 12px 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 14px;
+}
+.htb-time { font-family: 'Playfair Display', serif; font-size: 1.4rem; font-weight: 700; color: white; }
+.htb-date { font-size: 0.72rem; color: rgba(255,255,255,0.4); margin-top: 2px; }
+.htb-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--sage); box-shadow: 0 0 8px var(--sage); }
+
+/* Floating mini cards */
+.hcard-clinic {
+  width: 180px;
+  top: 10px;
+  right: -20px;
+  transform: rotate(4deg);
+  z-index: 2;
+}
+.hcard-clinic-status { display: flex; align-items: center; gap: 6px; }
+.hcd { width: 7px; height: 7px; border-radius: 50%; background: #5dde7a; box-shadow: 0 0 8px #5dde7a; animation: pulse 2s infinite; }
+@keyframes pulse { 0%,100%{opacity:1}50%{opacity:0.4} }
+.hcard-clinic-name { font-size: 0.75rem; font-weight: 600; color: white; margin-top: 8px; }
+.hcard-clinic-sub { font-size: 0.68rem; color: rgba(255,255,255,0.4); }
+
+.hcard-pets {
+  width: 200px;
+  bottom: 40px;
+  left: -30px;
+  transform: rotate(-3deg);
+  z-index: 2;
+}
+.hcard-pets-title { font-size: 0.68rem; color: rgba(255,255,255,0.4); margin-bottom: 10px; text-transform: uppercase; letter-spacing: 0.08em; }
+.pet-row { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+.pet-em { font-size: 1rem; }
+.pet-nm { font-size: 0.78rem; color: white; font-weight: 500; }
+.pet-sp { font-size: 0.68rem; color: rgba(255,255,255,0.35); }
+
+/* floating orb decoration */
+.hero-orb {
+  position: absolute;
+  border-radius: 50%;
+  opacity: 0.12;
+  pointer-events: none;
+}
+.hero-orb-1 { width: 500px; height: 500px; border: 1px solid white; top: 50%; right: 5%; transform: translateY(-50%); }
+.hero-orb-2 { width: 320px; height: 320px; border: 1px solid white; top: 50%; right: 12%; transform: translateY(-50%); opacity: 0.07; }
+
+@keyframes slideUp { from { opacity:0; transform:translateY(24px); } to { opacity:1; transform:translateY(0); } }
+
+/* ── TICKER ────────────────────────────────────── */
+.ticker {
+  background: var(--amber);
+  padding: 12px 0;
+  overflow: hidden;
+  white-space: nowrap;
+}
+.ticker-inner {
+  display: inline-flex;
+  gap: 0;
+  animation: ticker 28s linear infinite;
+}
+@keyframes ticker { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+.ticker-item {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--white);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  padding: 0 32px;
+  display: inline-flex;
+  align-items: center;
+  gap: 16px;
+}
+.ticker-item::after { content: '✦'; opacity: 0.5; }
+
+/* ── SERVICES SECTION ──────────────────────────── */
+.section { padding: 100px 80px; max-width: 1280px; margin: 0 auto; }
+.section-eyebrow {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: var(--leaf);
+  font-weight: 600;
+  margin-bottom: 14px;
+}
+.section-h2 {
+  font-family: 'Playfair Display', serif;
+  font-size: clamp(2rem, 3.5vw, 3.4rem);
+  font-weight: 700;
+  color: var(--bark);
+  line-height: 1.1;
+  margin-bottom: 16px;
+}
+.section-h2 em { font-style: italic; color: var(--leaf); }
+.section-sub {
+  font-size: 0.95rem;
+  color: var(--text-muted);
+  max-width: 520px;
+  line-height: 1.7;
+  font-weight: 300;
+  margin-bottom: 60px;
+}
+
+.services-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 20px;
+}
+.service-card {
+  background: var(--white);
+  border: 1px solid var(--sand);
+  border-radius: 20px;
+  padding: 28px 24px;
+  transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s;
+  cursor: none;
+  position: relative;
+  overflow: hidden;
+}
+.service-card::before {
+  content: '';
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  height: 3px;
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.3s ease;
+}
+.sc-vax::before { background: var(--leaf); }
+.sc-routine::before { background: var(--amber); }
+.sc-surgery::before { background: #8b5e9e; }
+.sc-emergency::before { background: #c45a4e; }
+.service-card:hover { transform: translateY(-6px); box-shadow: 0 20px 48px rgba(30,58,47,0.1); border-color: transparent; }
+.service-card:hover::before { transform: scaleX(1); }
+
+.sc-icon {
+  font-size: 2.2rem;
+  margin-bottom: 18px;
+  display: block;
+}
+.sc-name {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--bark);
+  margin-bottom: 8px;
+}
+.sc-desc {
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  line-height: 1.65;
+  margin-bottom: 18px;
+  font-weight: 300;
+}
+.sc-duration {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--leaf);
+  background: #e8f3ec;
+  padding: 4px 12px;
+  border-radius: 12px;
+  display: inline-block;
+}
+
+/* ── HOW IT WORKS ──────────────────────────────── */
+.how-section {
+  background: var(--forest);
+  padding: 100px 0;
+  overflow: hidden;
+  position: relative;
+}
+.how-section::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at 70% 50%, rgba(74,124,89,0.15) 0%, transparent 60%);
+}
+.how-inner { max-width: 1280px; margin: 0 auto; padding: 0 80px; position: relative; z-index: 1; }
+.how-header { display: grid; grid-template-columns: 1fr 1fr; gap: 80px; align-items: end; margin-bottom: 72px; }
+.how-title { font-family: 'Playfair Display', serif; font-size: clamp(2rem,3.5vw,3.4rem); font-weight: 700; color: white; line-height: 1.1; }
+.how-title em { font-style: italic; color: var(--sage); }
+.how-right-text { font-size: 0.92rem; color: rgba(255,255,255,0.45); line-height: 1.75; font-weight: 300; }
+.how-eyebrow { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.14em; color: var(--sage); font-weight: 600; margin-bottom: 14px; }
+
+.steps-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 2px; position: relative; }
+.steps-row::before {
+  content: '';
+  position: absolute;
+  top: 32px;
+  left: calc(16.6% + 20px);
+  right: calc(16.6% + 20px);
+  height: 1px;
+  background: linear-gradient(to right, var(--forest-mid), rgba(122,170,133,0.3), var(--forest-mid));
+  z-index: 0;
+}
+.step {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.07);
+  border-radius: 20px;
+  padding: 32px 28px;
+  position: relative;
+  z-index: 1;
+  transition: background 0.3s;
+  cursor: none;
+}
+.step:hover { background: rgba(255,255,255,0.08); }
+.step-num {
+  width: 48px; height: 48px;
+  border-radius: 50%;
+  background: var(--forest);
+  border: 2px solid rgba(122,170,133,0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Playfair Display', serif;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--sage);
+  margin-bottom: 24px;
+}
+.step-title { font-family: 'Playfair Display', serif; font-size: 1.2rem; font-weight: 700; color: white; margin-bottom: 10px; }
+.step-desc { font-size: 0.83rem; color: rgba(255,255,255,0.45); line-height: 1.7; font-weight: 300; }
+.step-icon { font-size: 1.6rem; margin-bottom: 16px; display: block; }
+
+/* ── FEATURES BENTO ────────────────────────────── */
+.bento-section { padding: 100px 80px; max-width: 1280px; margin: 0 auto; }
+.bento-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  grid-template-rows: auto auto;
+  gap: 20px;
+}
+.bento-card {
+  background: var(--white);
+  border: 1px solid var(--sand);
+  border-radius: 24px;
+  padding: 36px;
+  overflow: hidden;
+  position: relative;
+  transition: transform 0.3s, box-shadow 0.3s;
+  cursor: none;
+}
+.bento-card:hover { transform: translateY(-4px); box-shadow: 0 24px 56px rgba(30,58,47,0.1); }
+.bento-wide { grid-column: span 2; }
+.bento-tall { grid-row: span 2; }
+
+.bento-label { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.12em; font-weight: 600; color: var(--leaf); margin-bottom: 12px; }
+.bento-h { font-family: 'Playfair Display', serif; font-size: 1.4rem; font-weight: 700; color: var(--bark); margin-bottom: 10px; line-height: 1.2; }
+.bento-h em { font-style: italic; color: var(--leaf); }
+.bento-p { font-size: 0.83rem; color: var(--text-muted); line-height: 1.7; font-weight: 300; }
+.bento-icon { font-size: 2.8rem; margin-bottom: 20px; display: block; }
+
+/* Schedule preview in bento */
+.bento-slots { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 20px; }
+.bs { padding: 6px 14px; border-radius: 8px; font-size: 0.75rem; font-weight: 500; }
+.bs-open { background: #e8f3ec; color: var(--leaf); border: 1px solid #c0dfc8; }
+.bs-taken { background: var(--parchment); color: var(--sand); border: 1px solid var(--sand); text-decoration: line-through; }
+.bs-selected { background: var(--forest); color: white; }
+
+/* PHT Clock in bento */
+.bento-clock {
+  background: linear-gradient(135deg, var(--forest), var(--forest-mid));
+  border-radius: 16px;
+  padding: 20px;
+  margin-top: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.bc-time { font-family: 'Playfair Display', serif; font-size: 2rem; font-weight: 700; color: white; }
+.bc-label { font-size: 0.68rem; color: rgba(255,255,255,0.4); text-transform: uppercase; letter-spacing: 0.08em; margin-top: 2px; }
+.bc-badge { background: rgba(122,170,133,0.2); border: 1px solid rgba(122,170,133,0.3); color: var(--mint); font-size: 0.72rem; padding: 4px 10px; border-radius: 8px; font-weight: 500; }
+
+/* Status indicator */
+.status-preview {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: var(--cream);
+  border-radius: 12px;
+  padding: 14px 18px;
+  margin-top: 20px;
+}
+.sp-dot { width: 10px; height: 10px; border-radius: 50%; background: #5dde7a; box-shadow: 0 0 10px #5dde7a; flex-shrink: 0; animation: pulse 2s infinite; }
+.sp-text { font-size: 0.82rem; font-weight: 500; color: var(--text); }
+.sp-hours { font-size: 0.75rem; color: var(--text-muted); margin-left: auto; }
+
+/* Pet emoji row */
+.pet-emoji-row { display: flex; gap: 14px; margin-top: 24px; }
+.per { width: 52px; height: 52px; border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; border: 1px solid var(--sand); }
+.per-1 { background: #fef3e2; }
+.per-2 { background: #f3e5f5; }
+.per-3 { background: #e8f5e9; }
+.per-4 { background: #e3f2fd; }
+
+/* ── TESTIMONIALS ──────────────────────────────── */
+.testi-section {
+  background: var(--parchment);
+  padding: 100px 80px;
+  position: relative;
+  overflow: hidden;
+}
+.testi-section::before {
+  content: '"';
+  font-family: 'Playfair Display', serif;
+  font-size: 40rem;
+  font-weight: 900;
+  color: var(--sand);
+  position: absolute;
+  top: -80px;
+  left: -30px;
+  line-height: 1;
+  pointer-events: none;
+  opacity: 0.35;
+}
+.testi-inner { max-width: 1280px; margin: 0 auto; position: relative; z-index: 1; }
+.testi-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
+.testi-card {
+  background: var(--white);
+  border-radius: 20px;
+  padding: 28px;
+  border: 1px solid var(--sand);
+  transition: transform 0.3s, box-shadow 0.3s;
+  cursor: none;
+}
+.testi-card:hover { transform: translateY(-4px); box-shadow: 0 16px 40px rgba(61,43,31,0.08); }
+.testi-stars { color: var(--amber); margin-bottom: 14px; font-size: 0.9rem; letter-spacing: 2px; }
+.testi-quote { font-family: 'Playfair Display', serif; font-size: 1rem; font-weight: 400; color: var(--text); line-height: 1.65; margin-bottom: 20px; font-style: italic; }
+.testi-author { display: flex; align-items: center; gap: 10px; }
+.testi-av { width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.8rem; font-weight: 600; color: white; }
+.testi-name { font-size: 0.85rem; font-weight: 600; color: var(--text); }
+.testi-pet { font-size: 0.75rem; color: var(--text-muted); }
+
+/* ── CTA SECTION ───────────────────────────────── */
+.cta-section {
+  padding: 120px 80px;
+  max-width: 1280px;
+  margin: 0 auto;
+  text-align: center;
+}
+.cta-wrap {
+  background: var(--forest);
+  border-radius: 32px;
+  padding: 80px 60px;
+  position: relative;
+  overflow: hidden;
+}
+.cta-wrap::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at 50% 0%, rgba(122,170,133,0.2) 0%, transparent 60%);
+}
+.cta-eyebrow { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.14em; color: var(--sage); font-weight: 600; margin-bottom: 20px; position: relative; z-index: 1; }
+.cta-h { font-family: 'Playfair Display', serif; font-size: clamp(2.2rem, 4vw, 4rem); font-weight: 900; color: white; line-height: 1.05; margin-bottom: 20px; position: relative; z-index: 1; }
+.cta-h em { font-style: italic; color: var(--amber-light); }
+.cta-p { font-size: 0.95rem; color: rgba(255,255,255,0.45); max-width: 480px; margin: 0 auto 44px; line-height: 1.7; position: relative; z-index: 1; font-weight: 300; }
+.cta-buttons { display: flex; align-items: center; justify-content: center; gap: 16px; position: relative; z-index: 1; }
+.btn-cta-primary {
+  background: var(--amber);
+  color: white;
+  padding: 15px 36px;
+  border-radius: 12px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  text-decoration: none;
+  font-family: 'Instrument Sans', sans-serif;
+  border: none;
+  cursor: none;
+  box-shadow: 0 8px 28px rgba(200,132,58,0.4);
+  transition: background 0.2s, transform 0.2s, box-shadow 0.2s;
+}
+.btn-cta-primary:hover { background: var(--amber-light); transform: translateY(-2px); box-shadow: 0 14px 36px rgba(200,132,58,0.5); }
+.btn-cta-ghost {
+  color: rgba(255,255,255,0.55);
+  font-size: 0.88rem;
+  text-decoration: none;
+  border: 1px solid rgba(255,255,255,0.15);
+  padding: 14px 28px;
+  border-radius: 12px;
+  font-family: 'Instrument Sans', sans-serif;
+  transition: color 0.2s, border-color 0.2s;
+  cursor: none;
+}
+.btn-cta-ghost:hover { color: white; border-color: rgba(255,255,255,0.35); }
+
+/* ── FOOTER ────────────────────────────────────── */
+footer {
+  background: var(--bark);
+  color: rgba(255,255,255,0.5);
+  padding: 60px 80px 40px;
+}
+.footer-inner { max-width: 1280px; margin: 0 auto; }
+.footer-top { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 60px; margin-bottom: 48px; }
+.footer-brand .logo { font-family: 'Playfair Display', serif; font-size: 1.5rem; font-weight: 700; color: white; margin-bottom: 12px; }
+.footer-brand p { font-size: 0.83rem; line-height: 1.7; max-width: 260px; font-weight: 300; }
+.footer-col h4 { font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.1em; color: rgba(255,255,255,0.7); font-weight: 600; margin-bottom: 16px; }
+.footer-col ul { list-style: none; }
+.footer-col li { margin-bottom: 10px; }
+.footer-col a { font-size: 0.83rem; color: rgba(255,255,255,0.4); text-decoration: none; transition: color 0.2s; font-weight: 300; }
+.footer-col a:hover { color: white; }
+.footer-bottom {
+  border-top: 1px solid rgba(255,255,255,0.08);
+  padding-top: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.78rem;
+}
+.footer-pht { background: rgba(255,255,255,0.06); padding: 4px 12px; border-radius: 6px; font-size: 0.73rem; }
+
+/* ── SCROLL REVEAL ─────────────────────────────── */
+.reveal {
+  opacity: 0;
+  transform: translateY(32px);
+  transition: opacity 0.75s ease, transform 0.75s ease;
+}
+.reveal.visible { opacity: 1; transform: translateY(0); }
+.reveal-delay-1 { transition-delay: 0.1s; }
+.reveal-delay-2 { transition-delay: 0.2s; }
+.reveal-delay-3 { transition-delay: 0.3s; }
+.reveal-delay-4 { transition-delay: 0.4s; }
+
+/* ── RESPONSIVE ────────────────────────────────── */
+@media (max-width: 1024px) {
+  .services-grid { grid-template-columns: repeat(2,1fr); }
+  .bento-grid { grid-template-columns: 1fr 1fr; }
+  .bento-wide { grid-column: span 2; }
+  .testi-grid { grid-template-columns: repeat(2,1fr); }
+  nav { padding: 0 32px; }
+  .section, .bento-section, .testi-section, .cta-section { padding: 80px 32px; }
+  .footer-inner, footer { padding: 60px 32px 40px; }
+  .how-inner { padding: 0 32px; }
+}
+@media (max-width: 768px) {
+  body { cursor: auto; }
+  .cursor, .cursor-ring { display: none; }
+  .hero { grid-template-columns: 1fr; }
+  .hero-right { display: none; }
+  .hero-left { padding: 120px 32px 80px; }
+  nav .nav-links { display: none; }
+  nav { padding: 0 24px; }
+  .section, .bento-section, .testi-section, .cta-section { padding: 60px 24px; }
+  .services-grid, .steps-row, .testi-grid { grid-template-columns: 1fr; }
+  .bento-grid { grid-template-columns: 1fr; }
+  .bento-wide { grid-column: span 1; }
+  .how-header { grid-template-columns: 1fr; gap: 24px; }
+  .footer-top { grid-template-columns: 1fr 1fr; }
+  .cta-wrap { padding: 60px 32px; }
+}
+</style>
+</head>
+<body>
+
+<!-- Cursor -->
+<div class="cursor" id="cursor"></div>
+<div class="cursor-ring" id="cursor-ring"></div>
+
+<!-- ── NAVBAR ─────────────────────────────────── -->
+<nav id="navbar">
+  <a href="#" class="nav-logo">
+    <div class="logo-paw">🐾</div>
+    PawCare
+  </a>
+  <ul class="nav-links">
+    <li><a href="#services">Services</a></li>
+    <li><a href="#how">How It Works</a></li>
+    <li><a href="#features">Features</a></li>
+    <li><a href="#testimonials">Reviews</a></li>
+  </ul>
+  <div class="nav-cta">
+    <button class="btn-nav-ghost" onclick="handleSignIn()">Sign In</button>
+    <button class="btn-nav-fill" onclick="window.location.href='/auth.html'">Get Started</button>
+  </div>
+</nav>
+
+<!-- ── HERO ───────────────────────────────────── -->
+<section class="hero">
+  <div class="hero-bg">
+    <div class="hero-blob hero-blob-1"></div>
+    <div class="hero-blob hero-blob-2"></div>
+    <div class="hero-blob hero-blob-3"></div>
+  </div>
+  <div class="hero-orb hero-orb-1"></div>
+  <div class="hero-orb hero-orb-2"></div>
+
+  <div class="hero-left">
+    <div class="hero-eyebrow">
+      <div class="eyebrow-dot"></div>
+      Clinic Open · 8AM–8PM PHT
+    </div>
+    <h1 class="hero-h1">
+      Your pet deserves
+      <em>exceptional care.</em>
+    </h1>
+    <p class="hero-sub">
+      Book veterinary appointments in seconds — vaccinations, check-ups, and surgery consults. Real-time availability, instant confirmation, all from Manila.
+    </p>
+    <div class="hero-actions">
+      <a href="/auth.html" class="btn-hero-primary">Book an Appointment</a>
+      <a href="#how" class="btn-hero-ghost">
+        <div class="play-btn">▶</div>
+        How it works
+      </a>
+    </div>
+    <div class="hero-social-proof">
+      <div class="avatars-stack">
+        <div class="av av-1">MR</div>
+        <div class="av av-2">JL</div>
+        <div class="av av-3">AS</div>
+        <div class="av av-4">CG</div>
+      </div>
+      <div class="social-text"><strong>500+ pet owners</strong> trust PawCare</div>
+    </div>
+  </div>
+
+  <div class="hero-right">
+    <div class="hero-card-cluster">
+      <!-- Clinic mini card -->
+      <div class="hcard hcard-clinic">
+        <div class="hcard-clinic-status">
+          <div class="hcd"></div>
+          <span style="font-size:0.7rem;color:rgba(255,255,255,0.6)">Currently Open</span>
+        </div>
+        <div class="hcard-clinic-name">PawCare Clinic</div>
+        <div class="hcard-clinic-sub">8:00 AM – 8:00 PM</div>
+      </div>
+
+      <!-- Main appointment card -->
+      <div class="hcard hcard-main">
+        <div class="hcard-top">
+          <div class="hcard-icon">🐶</div>
+          <div>
+            <div class="hcard-label">Upcoming Appointment</div>
+            <div class="hcard-name">Noodles</div>
+          </div>
+        </div>
+        <div class="hcard-row">
+          <span class="hcard-key">Service</span>
+          <span class="hcard-val">Routine Check-up</span>
+        </div>
+        <div class="hcard-row">
+          <span class="hcard-key">Duration</span>
+          <span class="hcard-val">45 min</span>
+        </div>
+        <div class="hcard-row">
+          <span class="hcard-key">Status</span>
+          <span class="hcard-badge">Confirmed ✓</span>
+        </div>
+        <div class="hcard-time-bar">
+          <div>
+            <div class="htb-time">9:00 AM</div>
+            <div class="htb-date">Mon, March 3 · PHT</div>
+          </div>
+          <div class="htb-dot"></div>
+        </div>
+      </div>
+
+      <!-- Pets mini card -->
+      <div class="hcard hcard-pets">
+        <div class="hcard-pets-title">My Pets</div>
+        <div class="pet-row">
+          <span class="pet-em">🐶</span>
+          <div><div class="pet-nm">Noodles</div><div class="pet-sp">Shih Tzu</div></div>
+        </div>
+        <div class="pet-row">
+          <span class="pet-em">🐱</span>
+          <div><div class="pet-nm">Mochi</div><div class="pet-sp">Persian</div></div>
+        </div>
+        <div class="pet-row">
+          <span class="pet-em">🐕</span>
+          <div><div class="pet-nm">Dumpling</div><div class="pet-sp">Aspin</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── TICKER ──────────────────────────────────── -->
+<div class="ticker">
+  <div class="ticker-inner">
+    <span class="ticker-item">Vaccinations</span>
+    <span class="ticker-item">Routine Check-ups</span>
+    <span class="ticker-item">Surgery Consultations</span>
+    <span class="ticker-item">Emergency Care</span>
+    <span class="ticker-item">Pet Health Records</span>
+    <span class="ticker-item">Real-time Availability</span>
+    <span class="ticker-item">Philippine Standard Time</span>
+    <span class="ticker-item">Open 8AM–8PM Daily</span>
+    <!-- duplicate for seamless loop -->
+    <span class="ticker-item">Vaccinations</span>
+    <span class="ticker-item">Routine Check-ups</span>
+    <span class="ticker-item">Surgery Consultations</span>
+    <span class="ticker-item">Emergency Care</span>
+    <span class="ticker-item">Pet Health Records</span>
+    <span class="ticker-item">Real-time Availability</span>
+    <span class="ticker-item">Philippine Standard Time</span>
+    <span class="ticker-item">Open 8AM–8PM Daily</span>
+  </div>
+</div>
+
+<!-- ── SERVICES ────────────────────────────────── -->
+<section id="services">
+  <div class="section">
+    <div class="section-eyebrow reveal">What We Offer</div>
+    <h2 class="section-h2 reveal reveal-delay-1">Care tailored to<br><em>every need</em></h2>
+    <p class="section-sub reveal reveal-delay-2">From a simple check-up to complex surgery — we've got your pet covered with transparent scheduling and dedicated care.</p>
+    <div class="services-grid">
+      <div class="service-card sc-vax reveal reveal-delay-1">
+        <span class="sc-icon">💉</span>
+        <div class="sc-name">Vaccination</div>
+        <p class="sc-desc">Keep your pet protected with up-to-date immunizations. Quick, stress-free, and essential for long-term health.</p>
+        <span class="sc-duration">⏱ 30 minutes</span>
+      </div>
+      <div class="service-card sc-routine reveal reveal-delay-2">
+        <span class="sc-icon">🩺</span>
+        <div class="sc-name">Routine Check-up</div>
+        <p class="sc-desc">Comprehensive wellness exam covering weight, vitals, dental, and more. Catch issues early before they grow.</p>
+        <span class="sc-duration">⏱ 45 minutes</span>
+      </div>
+      <div class="service-card sc-surgery reveal reveal-delay-3">
+        <span class="sc-icon">🔬</span>
+        <div class="sc-name">Surgery Consult</div>
+        <p class="sc-desc">Pre- and post-op consultations with our experienced surgeons. Full planning and recovery guidance included.</p>
+        <span class="sc-duration">⏱ 2 hours</span>
+      </div>
+      <div class="service-card sc-emergency reveal reveal-delay-4">
+        <span class="sc-icon">🚨</span>
+        <div class="sc-name">Emergency Care</div>
+        <p class="sc-desc">Immediate triage for urgent situations. Book fast-track emergency slots and get your pet seen right away.</p>
+        <span class="sc-duration">⏱ 15 minutes</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── HOW IT WORKS ────────────────────────────── -->
+<section id="how" class="how-section">
+  <div class="how-inner">
+    <div class="how-header">
+      <div>
+        <div class="how-eyebrow reveal">The Process</div>
+        <h2 class="how-title reveal reveal-delay-1">Booking made<br><em>beautifully simple</em></h2>
+      </div>
+      <p class="how-right-text reveal reveal-delay-2">No phone tag, no waiting on hold. Our scheduling system lets you see real-time availability and book in under two minutes — any time of day.</p>
+    </div>
+    <div class="steps-row">
+      <div class="step reveal reveal-delay-1">
+        <div class="step-num">1</div>
+        <span class="step-icon">🔐</span>
+        <div class="step-title">Create Your Account</div>
+        <p class="step-desc">Register in seconds. Add your pet profiles once — breed, age, medical history — and they're saved forever.</p>
+      </div>
+      <div class="step reveal reveal-delay-2">
+        <div class="step-num">2</div>
+        <span class="step-icon">📅</span>
+        <div class="step-title">Pick a Slot</div>
+        <p class="step-desc">Browse live availability updated in real time. Choose your service, pick a date, select an open slot — done.</p>
+      </div>
+      <div class="step reveal reveal-delay-3">
+        <div class="step-num">3</div>
+        <span class="step-icon">✅</span>
+        <div class="step-title">Show Up & Relax</div>
+        <p class="step-desc">Your appointment is confirmed instantly. Track status, reschedule if needed, and get your pet the care they deserve.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── FEATURES BENTO ──────────────────────────── -->
+<section id="features">
+  <div class="bento-section">
+    <div class="section-eyebrow reveal">Built for Pet Owners</div>
+    <h2 class="section-h2 reveal reveal-delay-1">Everything you need,<br><em>nothing you don't</em></h2>
+    <div style="height:48px"></div>
+    <div class="bento-grid">
+
+      <!-- Wide: scheduling -->
+      <div class="bento-card bento-wide reveal reveal-delay-1">
+        <div class="bento-label">Live Availability</div>
+        <div class="bento-h">Pick from <em>real-time slots</em> — no double-booking, ever.</div>
+        <p class="bento-p">Every slot is checked against all active appointments the moment you browse. 30-minute increments from 8 AM to 8 PM, filtered for service duration.</p>
+        <div class="bento-slots">
+          <span class="bs bs-open">8:00 AM</span>
+          <span class="bs bs-open">8:30 AM</span>
+          <span class="bs bs-taken">9:00 AM</span>
+          <span class="bs bs-selected">9:30 AM ✓</span>
+          <span class="bs bs-taken">10:00 AM</span>
+          <span class="bs bs-open">10:30 AM</span>
+          <span class="bs bs-open">11:00 AM</span>
+          <span class="bs bs-taken">11:30 AM</span>
+          <span class="bs bs-open">1:00 PM</span>
+          <span class="bs bs-open">1:30 PM</span>
+        </div>
+      </div>
+
+      <!-- Timezone -->
+      <div class="bento-card reveal reveal-delay-2">
+        <span class="bento-icon">🕐</span>
+        <div class="bento-label">Timezone Native</div>
+        <div class="bento-h">Always in <em>PHT</em></div>
+        <p class="bento-p">Every timestamp, every booking, every notification — all in Philippine Standard Time. Zero confusion.</p>
+        <div class="bento-clock">
+          <div>
+            <div class="bc-time" id="live-clock">—</div>
+            <div class="bc-label">Philippine Standard Time</div>
+          </div>
+          <div class="bc-badge">UTC+8</div>
+        </div>
+      </div>
+
+      <!-- Pets tall -->
+      <div class="bento-card bento-tall reveal reveal-delay-1">
+        <span class="bento-icon">🐾</span>
+        <div class="bento-label">Pet Profiles</div>
+        <div class="bento-h">All your pets, <em>one place</em></div>
+        <p class="bento-p">Register multiple pets with full medical history, breed, vaccination dates, and notes. Book for any of them in two taps.</p>
+        <div class="pet-emoji-row">
+          <div class="per per-1">🐶</div>
+          <div class="per per-2">🐱</div>
+          <div class="per per-3">🐰</div>
+          <div class="per per-4">🦜</div>
+        </div>
+        <div style="height:20px"></div>
+        <p class="bento-p" style="font-size:0.78rem">Dogs, cats, rabbits, birds, and more. Every detail securely stored and accessible at appointment time.</p>
+      </div>
+
+      <!-- Clinic status -->
+      <div class="bento-card reveal reveal-delay-2">
+        <span class="bento-icon">🏥</span>
+        <div class="bento-label">Clinic Status</div>
+        <div class="bento-h">Know before you go</div>
+        <p class="bento-p">Real-time clinic open/close status — including "closing soon" alerts — so you're never surprised.</p>
+        <div class="status-preview">
+          <div class="sp-dot"></div>
+          <span class="sp-text">Clinic is Open</span>
+          <span class="sp-hours">Until 8:00 PM</span>
+        </div>
+      </div>
+
+      <!-- Secure -->
+      <div class="bento-card reveal reveal-delay-3">
+        <span class="bento-icon">🔒</span>
+        <div class="bento-label">Secure by Design</div>
+        <div class="bento-h">JWT auth & <em>bcrypt</em> encryption</div>
+        <p class="bento-p">Your data is protected by industry-standard authentication with 24-hour JWT tokens and bcrypt password hashing.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── TESTIMONIALS ────────────────────────────── -->
+<section id="testimonials" class="testi-section">
+  <div class="testi-inner">
+    <div class="section-eyebrow reveal">From Our Community</div>
+    <h2 class="section-h2 reveal reveal-delay-1" style="margin-bottom:48px">Pet owners <em>love</em> PawCare</h2>
+    <div class="testi-grid">
+      <div class="testi-card reveal reveal-delay-1">
+        <div class="testi-stars">★★★★★</div>
+        <p class="testi-quote">"Booking for Noodles used to be a 20-minute phone call. Now it's literally 90 seconds. Confirmed instantly, I could see exactly which slots were open."</p>
+        <div class="testi-author">
+          <div class="testi-av" style="background:#5b8a6a">MR</div>
+          <div>
+            <div class="testi-name">Maria Reyes</div>
+            <div class="testi-pet">Owner of Noodles 🐶 & Mochi 🐱</div>
+          </div>
+        </div>
+      </div>
+      <div class="testi-card reveal reveal-delay-2">
+        <div class="testi-stars">★★★★★</div>
+        <p class="testi-quote">"The medical history feature saved us during Coco's emergency. The vet already had everything — breed, allergies, past vaccinations — before we even walked in."</p>
+        <div class="testi-author">
+          <div class="testi-av" style="background:#8b6e4e">JL</div>
+          <div>
+            <div class="testi-name">Jose Lim</div>
+            <div class="testi-pet">Owner of Coco 🐕</div>
+          </div>
+        </div>
+      </div>
+      <div class="testi-card reveal reveal-delay-3">
+        <div class="testi-stars">★★★★★</div>
+        <p class="testi-quote">"I have three cats and keeping their vaccine schedules straight was a nightmare. PawCare keeps everything organised and reminds me when they're due."</p>
+        <div class="testi-author">
+          <div class="testi-av" style="background:#4a7080">AS</div>
+          <div>
+            <div class="testi-name">Ana Santos</div>
+            <div class="testi-pet">Owner of Luna, Boba & Taho 🐱🐱🐱</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── CTA ─────────────────────────────────────── -->
+<div class="cta-section">
+  <div class="cta-wrap reveal">
+    <div class="cta-eyebrow">Ready to start?</div>
+    <h2 class="cta-h">Give your pet the care<br><em>they deserve.</em></h2>
+    <p class="cta-p">Join hundreds of Manila pet owners who've made vet scheduling effortless. Free to register, takes less than a minute.</p>
+    <div class="cta-buttons">
+      <a href="/auth.html" class="btn-cta-primary">Create Free Account</a>
+      <a href="#services" class="btn-cta-ghost">View Clinic Hours</a>
+    </div>
+  </div>
+</div>
+
+<!-- ── FOOTER ──────────────────────────────────── -->
+<footer>
+  <div class="footer-inner">
+    <div class="footer-top">
+      <div class="footer-brand">
+        <div class="logo">🐾 PawCare</div>
+        <p>Veterinary scheduling made simple for pet owners across the Philippines. Book, manage, and track all from one place.</p>
+      </div>
+      <div class="footer-col">
+        <h4>Services</h4>
+        <ul>
+          <li><a href="#">Vaccination</a></li>
+          <li><a href="#">Routine Check-up</a></li>
+          <li><a href="#">Surgery Consult</a></li>
+          <li><a href="#">Emergency Care</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h4>Account</h4>
+        <ul>
+          <li><a href="#">Sign In</a></li>
+          <li><a href="#">Register</a></li>
+          <li><a href="#">Dashboard</a></li>
+          <li><a href="#">My Pets</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h4>Clinic</h4>
+        <ul>
+          <li><a href="#">Hours & Status</a></li>
+          <li><a href="#">Location</a></li>
+          <li><a href="#">Contact Us</a></li>
+          <li><a href="#">FAQ</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <span>© 2026 PawCare. All rights reserved.</span>
+      <span class="footer-pht">🕐 Philippine Standard Time (UTC+8)</span>
+    </div>
+  </div>
+</footer>
+
+<script>
+// ── Custom Cursor ──────────────────────────────────────────
+const cursor = document.getElementById('cursor');
+const ring = document.getElementById('cursor-ring');
+let mx = 0, my = 0, rx = 0, ry = 0;
+
+document.addEventListener('mousemove', e => {
+  mx = e.clientX; my = e.clientY;
+  cursor.style.left = mx + 'px';
+  cursor.style.top = my + 'px';
+});
+
+function animateRing() {
+  rx += (mx - rx) * 0.12;
+  ry += (my - ry) * 0.12;
+  ring.style.left = rx + 'px';
+  ring.style.top = ry + 'px';
+  requestAnimationFrame(animateRing);
+}
+animateRing();
+
+// ── Navbar scroll ──────────────────────────────────────────
+window.addEventListener('scroll', () => {
+  document.getElementById('navbar').classList.toggle('scrolled', window.scrollY > 40);
+});
+
+// ── Scroll reveal ──────────────────────────────────────────
+const reveals = document.querySelectorAll('.reveal');
+const observer = new IntersectionObserver(entries => {
+  entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
+}, { threshold: 0.12 });
+reveals.forEach(el => observer.observe(el));
+
+// ── Live PHT clock ─────────────────────────────────────────
+function updateClock() {
+  const now = new Date();
+  const pht = new Date(now.toLocaleString('en-US', { timeZone: 'Asia/Manila' }));
+  const h = pht.getHours();
+  const m = String(pht.getMinutes()).padStart(2, '0');
+  const ampm = h >= 12 ? 'PM' : 'AM';
+  const h12 = h % 12 || 12;
+  const el = document.getElementById('live-clock');
+  if (el) el.textContent = `${h12}:${m} ${ampm}`;
+}
+updateClock();
+setInterval(updateClock, 1000);
+
+// ── Hero card hover tilt ───────────────────────────────────
+document.querySelectorAll('.hcard-main').forEach(card => {
+  card.addEventListener('mousemove', e => {
+    const r = card.getBoundingClientRect();
+    const cx = r.left + r.width / 2, cy = r.top + r.height / 2;
+    const dx = (e.clientX - cx) / 20, dy = (e.clientY - cy) / 20;
+    card.style.transform = `translate(-50%,-50%) rotateY(${dx}deg) rotateX(${-dy}deg)`;
+  });
+  card.addEventListener('mouseleave', () => {
+    card.style.transform = 'translate(-50%,-50%)';
+  });
+});
+
+// ── Sign In Handler ────────────────────────────────────────────────────────
+function handleSignIn() {
+  // Check if user is already logged in
+  const token = localStorage.getItem('access_token');
+  
+  if (token) {
+    // User is logged in, go to appropriate dashboard
+    window.location.href = '/app.html';
+  } else {
+    // User not logged in, go to auth page
+    window.location.href = '/auth.html';
+  }
+}
+</script>
+</body>
+</html>

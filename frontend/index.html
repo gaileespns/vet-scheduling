@@ -4,7 +4,13 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>frontend</title>
+    <title>PawCare — Veterinary Scheduling</title>
+    <script>
+      // Redirect to landing page on initial load
+      if (window.location.pathname === '/' || window.location.pathname === '/index.html') {
+        window.location.href = '/landing.html';
+      }
+    </script>
   </head>
   <body>
     <div id="root"></div>

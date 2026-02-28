@@ -1,6 +1,6 @@
 """User repository for database operations."""
 from sqlmodel import Session, select
-from typing import Optional
+from typing import Optional, List
 import uuid
 
 from app.features.users.models import User
@@ -126,3 +126,12 @@ class UserRepository:
         self.session.delete(user)
         self.session.flush()
         return True
+
+    def get_all_users(self) -> List[User]:
+        """Get all users in the system (admin only).
+        
+        Returns:
+            List of all User objects
+        """
+        statement = select(User)
+        return list(self.session.exec(statement).all())

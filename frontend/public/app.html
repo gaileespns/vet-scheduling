@@ -1,0 +1,2446 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PawCare — Vet Scheduling</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400;1,700&family=Instrument+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    /* ── Landing page palette ── */
+    --forest:        #1e3a2f;
+    --forest-mid:    #2d5040;
+    --leaf:          #4a7c59;
+    --sage:          #7aaa85;
+    --sage-light:    #b8d4bd;
+    --mint:          #d4e8d8;
+    --cream:         #f8f3ec;
+    --parchment:     #ede5d8;
+    --sand:          #d6c9b5;
+    --amber:         #c8843a;
+    --amber-light:   #e8b87a;
+    --white:         #fefcf9;
+    --text:          #1a1510;
+    --text-mid:      #4a3f35;
+    --text-light:    #8a7b6e;
+    --border:        #e0d5c5;
+    --card-bg:       #ffffff;
+    --danger:        #b94040;
+    --danger-bg:     #fdf0f0;
+    --danger-border: #f0c4c4;
+
+    --shadow-sm: 0 2px 8px rgba(30,58,47,0.07);
+    --shadow-md: 0 8px 28px rgba(30,58,47,0.11);
+    --shadow-lg: 0 20px 56px rgba(30,58,47,0.16);
+    --radius:    16px;
+    --radius-sm: 10px;
+    --radius-lg: 24px;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Instrument Sans', sans-serif;
+    background: var(--cream);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* ─── NAVBAR ─────────────────────────────────── */
+  .app-nav {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 40px;
+    height: 68px;
+    background: var(--forest);
+    border-bottom: 1px solid rgba(255,255,255,0.07);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .nav-logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-family: 'Playfair Display', serif;
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: white;
+    cursor: pointer;
+  }
+  .nav-logo span { color: var(--sage); }
+  .nav-logo svg { width: 32px; height: 32px; }
+  .nav-logo-paw {
+    width: 32px; height: 32px;
+    background: var(--sage);
+    border-radius: 9px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1rem;
+  }
+  .nav-tabs {
+    display: flex;
+    gap: 2px;
+    background: rgba(255,255,255,0.07);
+    padding: 4px;
+    border-radius: 12px;
+    border: 1px solid rgba(255,255,255,0.1);
+  }
+  .nav-tab {
+    padding: 7px 18px;
+    border-radius: 9px;
+    font-size: 0.84rem;
+    font-weight: 500;
+    color: rgba(255,255,255,0.6);
+    cursor: pointer;
+    transition: all 0.2s;
+    border: none;
+    background: transparent;
+    font-family: 'Instrument Sans', sans-serif;
+  }
+  .nav-tab:hover { color: rgba(255,255,255,0.9); }
+  .nav-tab.active {
+    background: rgba(255,255,255,0.12);
+    color: white;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.2);
+  }
+  .nav-user {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .avatar {
+    width: 36px; height: 36px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--sage), var(--leaf));
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.8rem; font-weight: 600; color: white;
+    border: 2px solid rgba(255,255,255,0.15);
+    cursor: pointer;
+  }
+  .btn-logout {
+    background: rgba(255,255,255,0.1);
+    border: 1px solid rgba(255,255,255,0.2);
+    border-radius: 8px;
+    padding: 8px 10px;
+    color: rgba(255,255,255,0.9);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    font-size: 0;
+  }
+  .btn-logout:hover {
+    background: rgba(255,255,255,0.15);
+    border-color: rgba(255,255,255,0.3);
+    color: white;
+    transform: translateX(2px);
+  }
+  .btn-logout svg {
+    display: block;
+  }
+  .clinic-badge {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.76rem;
+    color: var(--sage-light);
+    background: rgba(122,170,133,0.15);
+    border: 1px solid rgba(122,170,133,0.25);
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-weight: 500;
+  }
+  .clinic-dot {
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    background: #5dde7a;
+    box-shadow: 0 0 6px #5dde7a;
+    animation: pulse 2s infinite;
+  }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+
+  /* ─── PAGES ──────────────────────────────────── */
+  .page { display: none; }
+  .page.active { display: block; animation: fadeIn 0.3s ease; }
+  @keyframes fadeIn { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
+
+  /* ─── DASHBOARD HERO ─────────────────────────── */
+  .dash-hero {
+    background: var(--forest);
+    padding: 52px 40px 80px;
+    position: relative;
+    overflow: hidden;
+  }
+  .dash-hero::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(ellipse at 80% 50%, rgba(74,124,89,0.18) 0%, transparent 60%),
+                radial-gradient(ellipse at 20% 80%, rgba(200,132,58,0.08) 0%, transparent 50%);
+  }
+  .dash-hero::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+    pointer-events: none;
+    opacity: 0.3;
+  }
+  .dash-hero-content { position: relative; z-index: 1; max-width: 1100px; margin: 0 auto; }
+  .dash-greeting {
+    font-family: 'Playfair Display', serif;
+    font-size: 2.4rem;
+    font-weight: 400;
+    color: white;
+    line-height: 1.15;
+    margin-bottom: 6px;
+  }
+  .dash-greeting em { font-style: italic; color: var(--amber-light); }
+  .dash-sub { color: rgba(255,255,255,0.45); font-size: 0.88rem; margin-bottom: 36px; font-weight: 300; }
+  .dash-stats { display: grid; grid-template-columns: repeat(4,1fr); gap: 14px; }
+  .stat-card {
+    background: rgba(255,255,255,0.06);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: var(--radius);
+    padding: 20px 22px;
+    transition: transform 0.2s, background 0.2s;
+  }
+  .stat-card:hover { transform: translateY(-2px); background: rgba(255,255,255,0.1); }
+  .stat-label { font-size: 0.7rem; color: rgba(255,255,255,0.45); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 8px; font-weight: 600; }
+  .stat-value { font-family: 'Playfair Display', serif; font-size: 2.2rem; font-weight: 700; color: white; line-height: 1; }
+  .stat-unit { font-size: 0.78rem; color: rgba(255,255,255,0.45); margin-top: 4px; }
+  .stat-accent { color: var(--sage-light); }
+
+  .dash-body { max-width: 1100px; margin: -32px auto 0; padding: 0 40px 60px; position: relative; z-index: 1; }
+  .dash-grid { display: grid; grid-template-columns: 1fr 340px; gap: 24px; }
+
+  /* ─── CARDS ──────────────────────────────────── */
+  .card {
+    background: var(--card-bg);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border);
+    box-shadow: var(--shadow-sm);
+    overflow: hidden;
+  }
+  .card-header {
+    padding: 20px 24px 0;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .card-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.05rem; font-weight: 700;
+    color: var(--forest);
+  }
+  .card-body { padding: 20px 24px 24px; }
+  .card-action {
+    font-size: 0.78rem;
+    color: var(--leaf);
+    cursor: pointer;
+    font-weight: 600;
+    padding: 5px 12px;
+    border-radius: 8px;
+    background: #e8f3ec;
+    border: 1px solid #c8dece;
+    transition: all 0.2s;
+    font-family: 'Instrument Sans', sans-serif;
+  }
+  .card-action:hover { background: var(--sage); color: white; border-color: var(--sage); }
+
+  /* ─── APPOINTMENT LIST ITEMS ─────────────────── */
+  .appt-item {
+    display: flex; align-items: center; gap: 14px;
+    padding: 13px 0;
+    border-bottom: 1px solid var(--border);
+    cursor: pointer;
+    transition: opacity 0.15s;
+  }
+  .appt-item:hover { opacity: 0.8; }
+  .appt-item:last-child { border-bottom: none; }
+  .appt-time-block {
+    min-width: 54px; text-align: center;
+    background: var(--parchment);
+    border-radius: 10px; padding: 7px 6px;
+    border: 1px solid var(--sand);
+  }
+  .appt-time-day { font-size: 0.62rem; color: var(--text-light); text-transform: uppercase; letter-spacing: 0.07em; font-weight: 600; }
+  .appt-time-hour { font-family: 'Playfair Display', serif; font-size: 1.1rem; font-weight: 700; color: var(--forest); line-height: 1.1; }
+  .appt-time-ampm { font-size: 0.62rem; color: var(--text-light); }
+  .appt-info { flex: 1; }
+  .appt-pet { font-weight: 500; font-size: 0.9rem; color: var(--text); }
+  .appt-service { font-size: 0.76rem; color: var(--text-light); margin-top: 2px; }
+  .appt-status {
+    font-size: 0.7rem; font-weight: 600;
+    padding: 4px 10px; border-radius: 20px;
+    text-transform: uppercase; letter-spacing: 0.05em;
+  }
+  .status-confirmed  { background: #e6f4ea; color: var(--leaf); border: 1px solid #c5dfc9; }
+  .status-pending    { background: #fef6e6; color: #9a6820; border: 1px solid #f0d89a; }
+  .status-completed  { background: #e8f3fb; color: #2a6280; border: 1px solid #b8d5ea; }
+  .status-cancelled  { background: var(--danger-bg); color: var(--danger); border: 1px solid var(--danger-border); }
+
+  /* ─── PET MINI CARDS ─────────────────────────── */
+  .pet-mini {
+    display: flex; align-items: center; gap: 12px;
+    padding: 13px 0;
+    border-bottom: 1px solid var(--border);
+    cursor: pointer;
+  }
+  .pet-mini:last-child { border-bottom: none; }
+  .pet-avatar { width: 42px; height: 42px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; flex-shrink: 0; }
+  .pet-dog { background: #fef6e8; }
+  .pet-cat { background: #f5eef9; }
+  .pet-info .pet-name { font-weight: 600; font-size: 0.88rem; color: var(--text); }
+  .pet-info .pet-detail { font-size: 0.74rem; color: var(--text-light); margin-top: 2px; }
+  .pet-chip {
+    margin-left: auto;
+    font-size: 0.68rem;
+    background: var(--parchment);
+    color: var(--text-mid);
+    padding: 3px 8px;
+    border-radius: 6px;
+    border: 1px solid var(--sand);
+    font-weight: 500;
+  }
+
+  /* ─── CLINIC STATUS CARD ─────────────────────── */
+  .clinic-status-card {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 18px 20px;
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 16px;
+    box-shadow: var(--shadow-sm);
+  }
+  .cs-left { 
+    display: contents;
+  }
+  .cs-icon { 
+    width: 44px; 
+    height: 44px; 
+    background: var(--forest); 
+    border-radius: 12px; 
+    display: flex; 
+    align-items: center; 
+    justify-content: center; 
+    font-size: 1.2rem;
+  }
+  .cs-info {
+    min-width: 0;
+  }
+  .cs-title { 
+    font-weight: 600; 
+    font-size: 0.92rem; 
+    color: var(--forest);
+    margin-bottom: 3px;
+    line-height: 1.2;
+  }
+  .cs-sub { 
+    font-size: 0.76rem; 
+    color: var(--text-light);
+    line-height: 1.3;
+  }
+  .cs-hours { 
+    font-family: 'Playfair Display', serif; 
+    font-size: 1.35rem; 
+    font-weight: 700; 
+    color: var(--forest);
+    white-space: nowrap;
+    text-align: right;
+  }
+
+  /* ─── PAGE HEADERS ───────────────────────────── */
+  .page-header {
+    background: var(--forest);
+    border-bottom: 1px solid rgba(255,255,255,0.07);
+    padding: 32px 40px 0;
+  }
+  .page-header-inner { max-width: 1100px; margin: 0 auto; }
+  .page-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.9rem; font-weight: 700;
+    color: white;
+  }
+  .page-subtitle { font-size: 0.86rem; color: rgba(255,255,255,0.45); margin-top: 4px; margin-bottom: 24px; font-weight: 300; }
+  .page-tabs { display: flex; gap: 0; }
+  .page-tab {
+    padding: 10px 20px;
+    font-size: 0.84rem; font-weight: 500;
+    color: rgba(255,255,255,0.45);
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    transition: all 0.2s;
+    background: none;
+    border-top: none; border-left: none; border-right: none;
+    font-family: 'Instrument Sans', sans-serif;
+  }
+  .page-tab.active { color: white; border-bottom-color: var(--amber); }
+  .page-tab:hover:not(.active) { color: rgba(255,255,255,0.7); }
+
+  .page-content { max-width: 1100px; margin: 0 auto; padding: 32px 40px 60px; }
+
+  /* ─── FILTER BAR ─────────────────────────────── */
+  .filters-bar { display: flex; gap: 10px; align-items: center; margin-bottom: 24px; flex-wrap: wrap; }
+  .filter-btn {
+    padding: 7px 16px; border-radius: 20px;
+    font-size: 0.8rem; font-weight: 500;
+    border: 1px solid var(--border);
+    background: var(--card-bg); color: var(--text-mid);
+    cursor: pointer; transition: all 0.2s;
+    font-family: 'Instrument Sans', sans-serif;
+  }
+  .filter-btn:hover, .filter-btn.active { background: var(--forest); color: white; border-color: var(--forest); }
+  .filter-select {
+    padding: 7px 14px; border-radius: 20px;
+    font-size: 0.8rem; border: 1px solid var(--border);
+    background: var(--card-bg); color: var(--text-mid);
+    font-family: 'Instrument Sans', sans-serif;
+    cursor: pointer; outline: none; margin-left: auto;
+  }
+
+  /* ─── APPOINTMENT CARDS ──────────────────────── */
+  .appt-cards { display: flex; flex-direction: column; gap: 12px; }
+  .appt-card {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px 24px;
+    display: grid;
+    grid-template-columns: auto 1px 1fr auto auto;
+    align-items: center; gap: 22px;
+    transition: box-shadow 0.2s, transform 0.2s;
+    cursor: pointer;
+  }
+  .appt-card:hover { box-shadow: var(--shadow-md); transform: translateY(-1px); }
+  .appt-card-date { text-align: center; min-width: 58px; }
+  .acd-month { font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-light); font-weight: 600; }
+  .acd-day { font-family: 'Playfair Display', serif; font-size: 2.1rem; font-weight: 900; color: var(--forest); line-height: 1; }
+  .acd-year { font-size: 0.68rem; color: var(--text-light); }
+  .appt-card-divider { width: 1px; height: 50px; background: var(--border); }
+  .aci-time { font-size: 0.78rem; color: var(--text-light); margin-bottom: 3px; }
+  .aci-pet { font-weight: 600; font-size: 0.98rem; color: var(--text); }
+  .aci-service { font-size: 0.81rem; color: var(--text-mid); margin-top: 3px; }
+  .aci-service span { display: inline-block; background: var(--parchment); padding: 2px 8px; border-radius: 6px; border: 1px solid var(--sand); font-size: 0.74rem; font-weight: 500; }
+  .appt-card-actions { display: flex; flex-direction: column; gap: 8px; align-items: flex-end; }
+
+  /* ─── BUTTONS ────────────────────────────────── */
+  .btn {
+    padding: 8px 18px; border-radius: 10px;
+    font-size: 0.82rem; font-weight: 600;
+    cursor: pointer;
+    font-family: 'Instrument Sans', sans-serif;
+    transition: all 0.2s; border: 1px solid transparent;
+  }
+  .btn-primary { background: var(--forest); color: white; }
+  .btn-primary:hover { background: var(--forest-mid); }
+  .btn-outline { background: transparent; border-color: var(--border); color: var(--text-mid); }
+  .btn-outline:hover { border-color: var(--forest); color: var(--forest); }
+  .btn-danger { background: transparent; border-color: var(--danger-border); color: var(--danger); }
+  .btn-danger:hover { background: var(--danger-bg); }
+  .btn-success { background: var(--leaf); color: white; }
+  .btn-success:hover { background: var(--forest-mid); }
+  .btn-amber { background: var(--amber); color: white; box-shadow: 0 4px 14px rgba(200,132,58,0.3); }
+  .btn-amber:hover { background: var(--amber-light); color: var(--text); }
+  .btn-lg { padding: 12px 28px; font-size: 0.9rem; border-radius: 12px; }
+
+  /* ─── TIME SLOT BUTTONS ──────────────────────── */
+  .time-slot {
+    padding: 10px 16px;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    border: 1px solid var(--border);
+    background: var(--cream);
+    color: var(--text);
+    cursor: pointer;
+    transition: all 0.2s;
+    font-family: 'Instrument Sans', sans-serif;
+  }
+  .time-slot:hover {
+    border-color: var(--sage);
+    background: white;
+  }
+  .time-slot.selected {
+    background: var(--forest);
+    color: white;
+    border-color: var(--forest);
+  }
+  .time-slot:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+
+  /* ─── BOOK CTA ───────────────────────────────── */
+  .book-cta {
+    background: var(--forest);
+    border-radius: var(--radius-lg);
+    padding: 26px 30px;
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 28px; color: white;
+    position: relative; overflow: hidden;
+  }
+  .book-cta::before {
+    content: '';
+    position: absolute; inset: 0;
+    background: radial-gradient(ellipse at 80% 50%, rgba(122,170,133,0.15) 0%, transparent 60%);
+  }
+  .book-cta-text { position: relative; z-index: 1; }
+  .book-cta-text h3 { font-family: 'Playfair Display', serif; font-size: 1.25rem; font-weight: 700; margin-bottom: 4px; }
+  .book-cta-text p { font-size: 0.83rem; opacity: 0.5; font-weight: 300; }
+  .btn-cta {
+    background: linear-gradient(135deg, var(--amber) 0%, #d4a574 100%);
+    color: white;
+    padding: 14px 28px;
+    border-radius: 14px;
+    font-weight: 600;
+    border: none;
+    cursor: pointer;
+    font-family: 'Instrument Sans', sans-serif;
+    font-size: 0.95rem;
+    box-shadow: 0 8px 24px rgba(200,132,58,0.4), 0 2px 8px rgba(200,132,58,0.2);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    z-index: 1;
+    letter-spacing: 0.3px;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .btn-cta:hover {
+    background: linear-gradient(135deg, #d4a574 0%, var(--amber) 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 12px 32px rgba(200,132,58,0.5), 0 4px 12px rgba(200,132,58,0.3);
+  }
+  .btn-cta:active {
+    transform: translateY(0px);
+    box-shadow: 0 4px 16px rgba(200,132,58,0.4);
+  }
+
+  /* ─── PETS PAGE ───────────────────────────────── */
+  .pets-grid { display: grid; grid-template-columns: repeat(auto-fill,minmax(280px,1fr)); gap: 20px; }
+  .pet-card {
+    background: var(--card-bg); border: 1px solid var(--border);
+    border-radius: var(--radius-lg); overflow: hidden;
+    transition: box-shadow 0.25s, transform 0.25s; cursor: pointer;
+  }
+  .pet-card:hover { box-shadow: var(--shadow-md); transform: translateY(-3px); }
+  .pet-card-header {
+    height: 110px; position: relative;
+    display: flex; align-items: center; justify-content: center; font-size: 3.5rem;
+  }
+  .pet-header-dog    { background: linear-gradient(135deg, #fef9ee, #f9e4b8); }
+  .pet-header-cat    { background: linear-gradient(135deg, #f4eff8, #e5d5f0); }
+  .pet-header-rabbit { background: linear-gradient(135deg, #eef6ef, #c8dfc9); }
+  .pet-card-body { padding: 20px; }
+  .pet-card-name { font-family: 'Playfair Display', serif; font-size: 1.2rem; font-weight: 700; color: var(--forest); }
+  .pet-card-breed { font-size: 0.78rem; color: var(--text-light); margin-top: 2px; margin-bottom: 14px; }
+  .pet-card-tags { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 16px; }
+  .tag { font-size: 0.7rem; padding: 3px 9px; border-radius: 6px; font-weight: 600; }
+  .tag-age     { background: #e8f0fb; color: #2a5090; border: 1px solid #bfd0f0; }
+  .tag-species { background: var(--parchment); color: var(--text-mid); border: 1px solid var(--sand); }
+  .tag-vacc    { background: #e6f4ea; color: var(--leaf); border: 1px solid #c5dfc9; }
+  .pet-card-actions { display: flex; gap: 8px; }
+
+  /* Add Pet card */
+  .pet-add-card {
+    background: var(--parchment); border: 2px dashed var(--sand);
+    border-radius: var(--radius-lg);
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    padding: 40px 20px; cursor: pointer;
+    transition: all 0.2s; min-height: 260px;
+    color: var(--text-light); text-align: center;
+  }
+  .pet-add-card:hover { border-color: var(--sage); color: var(--leaf); background: #edf4ee; }
+  .pet-add-card .plus { font-size: 2.5rem; margin-bottom: 10px; line-height: 1; }
+  .pet-add-card p { font-size: 0.83rem; margin-top: 4px; }
+
+  /* ─── MODAL ───────────────────────────────────── */
+  .modal-overlay {
+    position: fixed; inset: 0;
+    background: rgba(20,30,20,0.6);
+    backdrop-filter: blur(6px);
+    z-index: 200; display: none;
+    align-items: center; justify-content: center; padding: 24px;
+  }
+  .modal-overlay.open { display: flex; animation: fadeIn 0.2s ease; }
+  .modal {
+    background: var(--card-bg); border-radius: var(--radius-lg);
+    width: 100%; max-width: 500px;
+    box-shadow: var(--shadow-lg); overflow: hidden;
+    border: 1px solid var(--border);
+  }
+  .modal-header {
+    padding: 24px 28px 0;
+    display: flex; align-items: flex-start; justify-content: space-between;
+    background: var(--forest);
+  }
+  .modal-title { font-family: 'Playfair Display', serif; font-size: 1.25rem; font-weight: 700; color: white; }
+  .modal-sub { font-size: 0.81rem; color: rgba(255,255,255,0.45); margin-top: 4px; padding-bottom: 20px; font-weight: 300; }
+  .modal-close {
+    background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.15);
+    width: 30px; height: 30px; border-radius: 8px; cursor: pointer;
+    font-size: 0.9rem; display: flex; align-items: center; justify-content: center;
+    color: rgba(255,255,255,0.7); transition: background 0.2s;
+    margin-top: 2px; flex-shrink: 0;
+  }
+  .modal-close:hover { background: rgba(255,255,255,0.2); color: white; }
+  .modal-body { padding: 20px 28px; }
+  .modal-footer { padding: 0 28px 24px; display: flex; gap: 10px; justify-content: flex-end; }
+
+  /* ─── FORM ELEMENTS ──────────────────────────── */
+  .form-group { margin-bottom: 16px; }
+  .form-label { font-size: 0.8rem; font-weight: 600; color: var(--text-mid); display: block; margin-bottom: 6px; letter-spacing: 0.02em; }
+  .form-input, .form-select, .form-textarea {
+    width: 100%; padding: 10px 14px;
+    border: 1px solid var(--border); border-radius: var(--radius-sm);
+    font-family: 'Instrument Sans', sans-serif;
+    font-size: 0.87rem; color: var(--text);
+    background: var(--cream);
+    transition: border-color 0.2s, box-shadow 0.2s; outline: none;
+  }
+  .form-input:focus, .form-select:focus, .form-textarea:focus {
+    border-color: var(--sage);
+    box-shadow: 0 0 0 3px rgba(122,170,133,0.18);
+    background: white;
+  }
+  .form-textarea { resize: vertical; min-height: 80px; }
+  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+
+  /* ─── SLOT PICKER ────────────────────────────── */
+  .slot-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 7px; margin-top: 8px; }
+  .slot {
+    padding: 8px; text-align: center;
+    border: 1px solid var(--border); border-radius: 8px;
+    font-size: 0.76rem; cursor: pointer;
+    transition: all 0.15s; background: var(--card-bg);
+    font-family: 'Instrument Sans', sans-serif; font-weight: 500;
+  }
+  .slot:hover { border-color: var(--sage); color: var(--leaf); background: #f0f7f1; }
+  .slot.selected { background: var(--forest); color: white; border-color: var(--forest); }
+  .slot.unavailable { opacity: 0.32; cursor: not-allowed; background: var(--parchment); }
+
+  /* ─── TOAST ──────────────────────────────────── */
+  .toast {
+    position: fixed; bottom: 28px; right: 28px; z-index: 300;
+    background: var(--forest); color: white;
+    padding: 14px 20px; border-radius: 12px;
+    font-size: 0.86rem; box-shadow: var(--shadow-lg);
+    transform: translateY(80px); opacity: 0;
+    transition: all 0.35s cubic-bezier(0.34,1.56,0.64,1);
+    display: flex; align-items: center; gap: 10px;
+    border: 1px solid rgba(255,255,255,0.1);
+  }
+  .toast.show { transform: translateY(0); opacity: 1; }
+
+  /* ─── PROFILE ────────────────────────────────── */
+  .profile-grid { display: grid; grid-template-columns: 280px 1fr; gap: 24px; }
+  .profile-card {
+    background: var(--card-bg); border: 1px solid var(--border);
+    border-radius: var(--radius-lg); padding: 28px 24px;
+    text-align: center; height: fit-content;
+  }
+  .profile-avatar {
+    width: 80px; height: 80px; border-radius: 50%;
+    background: linear-gradient(135deg, var(--forest-mid), var(--forest));
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Playfair Display', serif;
+    font-size: 1.8rem; font-weight: 700; color: white;
+    margin: 0 auto 16px;
+    border: 3px solid var(--mint);
+  }
+  .profile-name { font-family: 'Playfair Display', serif; font-size: 1.15rem; font-weight: 700; color: var(--forest); }
+  .profile-role { font-size: 0.76rem; color: var(--text-light); margin-top: 4px; }
+  .profile-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 20px; }
+  .pstat { background: var(--parchment); border-radius: 10px; padding: 14px 8px; border: 1px solid var(--sand); text-align: center; }
+  .pstat-num { font-family: 'Playfair Display', serif; font-size: 1.5rem; font-weight: 700; color: var(--forest); }
+  .pstat-label { font-size: 0.7rem; color: var(--text-light); margin-top: 2px; }
+
+  /* ─── SERVICE BADGES ─────────────────────────── */
+  .svc-vaccination { color: #2a6280; background: #e8f3fb; border: 1px solid #b8d5ea; }
+  .svc-routine     { color: var(--leaf); background: #e6f4ea; border: 1px solid #c5dfc9; }
+  .svc-surgery     { color: #7a3a8a; background: #f3edf8; border: 1px solid #d8bce8; }
+  .svc-emergency   { color: #9a4820; background: #fef0e6; border: 1px solid #f0c8a0; }
+
+  /* ─── MISC ───────────────────────────────────── */
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--sand); border-radius: 3px; }
+
+  .empty-state { text-align: center; padding: 60px 20px; color: var(--text-light); }
+  .empty-state .icon { font-size: 3rem; margin-bottom: 12px; }
+  .empty-state h3 { font-family: 'Playfair Display', serif; font-size: 1.1rem; color: var(--text-mid); margin-bottom: 6px; }
+  .empty-state p { font-size: 0.83rem; }
+
+  @media (max-width: 768px) {
+    .app-nav { padding: 0 20px; }
+    .dash-hero { padding: 32px 20px 60px; }
+    .dash-stats { grid-template-columns: repeat(2,1fr); }
+    .dash-body { padding: 0 20px 40px; }
+    .dash-grid { grid-template-columns: 1fr; }
+    .page-header { padding: 24px 20px 0; }
+    .page-content { padding: 24px 20px 40px; }
+    .appt-card { grid-template-columns: auto 1fr; }
+    .appt-card-divider { display: none; }
+    .appt-card-actions { flex-direction: row; grid-column: 1/-1; }
+    .profile-grid { grid-template-columns: 1fr; }
+    .form-row { grid-template-columns: 1fr; }
+    .slot-grid { grid-template-columns: repeat(3,1fr); }
+    
+    /* Clinic status card responsive */
+    .clinic-status-card {
+      grid-template-columns: auto 1fr;
+      grid-template-rows: auto auto;
+      gap: 12px 14px;
+    }
+    .cs-icon {
+      grid-row: 1 / 3;
+    }
+    .cs-info {
+      grid-column: 2;
+      grid-row: 1;
+    }
+    .cs-hours {
+      grid-column: 2;
+      grid-row: 2;
+      text-align: left;
+      font-size: 1.2rem;
+    }
+  }
+</style>
+</head>
+<body>
+
+<!-- ─── NAVBAR ─────────────────────────────────── -->
+<nav class="app-nav">
+  <div class="nav-logo" onclick="window.location.href='/landing.html'" style="cursor: pointer;">
+    <div class="nav-logo-paw">🐾</div>
+    Paw<span>Care</span>
+  </div>
+  <div class="nav-tabs">
+    <button class="nav-tab active" onclick="showPage('dashboard', this)">Dashboard</button>
+    <button class="nav-tab" onclick="showPage('appointments', this)">Appointments</button>
+    <button class="nav-tab" onclick="showPage('pets', this)">My Pets</button>
+    <button class="nav-tab" onclick="showPage('profile', this)">Profile</button>
+  </div>
+  <div class="nav-user">
+    <div class="clinic-badge" id="role-badge"><div class="clinic-dot"></div>Clinic Open</div>
+    <div class="avatar" id="user-avatar">GE</div>
+    <button class="btn-logout" onclick="openModal('logout-modal')" title="Logout">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+        <polyline points="16 17 21 12 16 7"></polyline>
+        <line x1="21" y1="12" x2="9" y2="12"></line>
+      </svg>
+    </button>
+  </div>
+</nav>
+
+<!-- ─── DASHBOARD PAGE ─────────────────────────── -->
+<div id="page-dashboard" class="page active">
+  <div class="dash-hero">
+    <div class="dash-hero-content">
+      <div class="dash-greeting">Good morning, <em>Maria!</em></div>
+      <div class="dash-sub">Saturday, February 28, 2026 · Philippine Standard Time</div>
+      <div class="dash-stats">
+        <div class="stat-card">
+          <div class="stat-label">Upcoming</div>
+          <div class="stat-value">3<span class="stat-accent" style="font-size:1.2rem"> appts</span></div>
+          <div class="stat-unit">this week</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">My Pets</div>
+          <div class="stat-value">3</div>
+          <div class="stat-unit">registered</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Next Visit</div>
+          <div class="stat-value" id="next-visit-date" style="font-size:1.5rem">-</div>
+          <div class="stat-unit" id="next-visit-details">No upcoming visits</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Total Visits</div>
+          <div class="stat-value" id="total-visits">0</div>
+          <div class="stat-unit">all time</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="dash-body">
+    <div class="dash-grid">
+      <div>
+        <!-- Upcoming appointments -->
+        <div class="card" style="margin-bottom:20px">
+          <div class="card-header">
+            <div class="card-title">Upcoming Appointments</div>
+            <button class="card-action" onclick="showPage('appointments', document.querySelectorAll('.nav-tab')[1])">View all</button>
+          </div>
+          <div class="card-body">
+            <div class="appt-item">
+              <div class="appt-time-block">
+                <div class="appt-time-day">Mon</div>
+                <div class="appt-time-hour">9:00</div>
+                <div class="appt-time-ampm">AM</div>
+              </div>
+              <div class="appt-info">
+                <div class="appt-pet">🐶 Noodles — Shih Tzu</div>
+                <div class="appt-service">Routine Check-up · 45 min</div>
+              </div>
+              <div class="appt-status status-confirmed">Confirmed</div>
+            </div>
+            <div class="appt-item">
+              <div class="appt-time-block">
+                <div class="appt-time-day">Wed</div>
+                <div class="appt-time-hour">2:30</div>
+                <div class="appt-time-ampm">PM</div>
+              </div>
+              <div class="appt-info">
+                <div class="appt-pet">🐱 Mochi — Persian Cat</div>
+                <div class="appt-service">Vaccination · 30 min</div>
+              </div>
+              <div class="appt-status status-pending">Pending</div>
+            </div>
+            <div class="appt-item">
+              <div class="appt-time-block">
+                <div class="appt-time-day">Fri</div>
+                <div class="appt-time-hour">11:00</div>
+                <div class="appt-time-ampm">AM</div>
+              </div>
+              <div class="appt-info">
+                <div class="appt-pet">🐶 Noodles — Shih Tzu</div>
+                <div class="appt-service">Surgery Consult · 2 hrs</div>
+              </div>
+              <div class="appt-status status-confirmed">Confirmed</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Book CTA -->
+        <div class="book-cta">
+          <div class="book-cta-text">
+            <h3>Ready to schedule a visit?</h3>
+            <p>Available slots open daily 8:00 AM – 8:00 PM PHT</p>
+          </div>
+          <button class="btn-cta" onclick="openModal('book-modal')">
+            <span style="font-size:1.1rem">📅</span>
+            Book Appointment
+          </button>
+        </div>
+      </div>
+
+      <div>
+        <!-- Clinic Status -->
+        <div class="clinic-status-card">
+          <div class="cs-left">
+            <div class="cs-icon">🏥</div>
+            <div class="cs-info">
+              <div class="cs-title">Clinic is Open</div>
+              <div class="cs-sub">Walk-ins & appointments welcome</div>
+            </div>
+          </div>
+          <div class="cs-hours">8AM–8PM</div>
+        </div>
+
+        <!-- My Pets -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">My Pets</div>
+            <button class="card-action" onclick="showPage('pets', document.querySelectorAll('.nav-tab')[2])">Manage</button>
+          </div>
+          <div class="card-body">
+            <div class="pet-mini">
+              <div class="pet-avatar pet-dog">🐶</div>
+              <div class="pet-info">
+                <div class="pet-name">Noodles</div>
+                <div class="pet-detail">Shih Tzu · 4 yrs · M</div>
+              </div>
+              <div class="pet-chip">Vaccinated ✓</div>
+            </div>
+            <div class="pet-mini">
+              <div class="pet-avatar pet-cat">🐱</div>
+              <div class="pet-info">
+                <div class="pet-name">Mochi</div>
+                <div class="pet-detail">Persian · 2 yrs · F</div>
+              </div>
+              <div class="pet-chip">Due soon ⚠️</div>
+            </div>
+            <div class="pet-mini">
+              <div class="pet-avatar pet-dog">🐕</div>
+              <div class="pet-info">
+                <div class="pet-name">Dumpling</div>
+                <div class="pet-detail">Aspin · 1 yr · M</div>
+              </div>
+              <div class="pet-chip">Vaccinated ✓</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ─── APPOINTMENTS PAGE ──────────────────────── -->
+<div id="page-appointments" class="page">
+  <div class="page-header">
+    <div class="page-header-inner">
+      <div class="page-title">Appointments</div>
+      <div class="page-subtitle">Manage all your scheduled visits</div>
+      <div class="page-tabs">
+        <button class="page-tab active" onclick="filterAppts('all', this)">All</button>
+        <button class="page-tab" onclick="filterAppts('upcoming', this)">Upcoming</button>
+        <button class="page-tab" onclick="filterAppts('completed', this)">Completed</button>
+        <button class="page-tab" onclick="filterAppts('cancelled', this)">Cancelled</button>
+      </div>
+    </div>
+  </div>
+  <div class="page-content">
+    <div class="filters-bar">
+      <div id="pet-filters" style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="filter-btn active" onclick="setFilter(this)">All Pets</button>
+      </div>
+      <select class="filter-select">
+        <option>Sort: Newest first</option>
+        <option>Sort: Oldest first</option>
+        <option>Sort: Status</option>
+      </select>
+      <button class="btn btn-primary" onclick="openModal('book-modal')" style="margin-left:8px">+ Book New</button>
+    </div>
+
+    <div class="appt-cards">
+      <!-- Confirmed -->
+      <div class="appt-card">
+        <div class="appt-card-date">
+          <div class="acd-month">Mar</div>
+          <div class="acd-day">3</div>
+          <div class="acd-year">2026</div>
+        </div>
+        <div class="appt-card-divider"></div>
+        <div class="appt-card-info">
+          <div class="aci-time">Mon · 9:00 AM – 9:45 AM</div>
+          <div class="aci-pet">🐶 Noodles</div>
+          <div class="aci-service"><span class="svc-routine">Routine Check-up</span></div>
+        </div>
+        <div class="appt-status status-confirmed" style="align-self:flex-start">Confirmed</div>
+        <div class="appt-card-actions">
+          <button class="btn btn-outline" onclick="openModal('reschedule-modal')">Reschedule</button>
+          <button class="btn btn-danger">Cancel</button>
+        </div>
+      </div>
+
+      <!-- Pending -->
+      <div class="appt-card">
+        <div class="appt-card-date">
+          <div class="acd-month">Mar</div>
+          <div class="acd-day">5</div>
+          <div class="acd-year">2026</div>
+        </div>
+        <div class="appt-card-divider"></div>
+        <div class="appt-card-info">
+          <div class="aci-time">Wed · 2:30 PM – 3:00 PM</div>
+          <div class="aci-pet">🐱 Mochi</div>
+          <div class="aci-service"><span class="svc-vaccination">Vaccination</span></div>
+        </div>
+        <div class="appt-status status-pending" style="align-self:flex-start">Pending</div>
+        <div class="appt-card-actions">
+          <button class="btn btn-outline" onclick="openModal('reschedule-modal')">Reschedule</button>
+          <button class="btn btn-danger">Cancel</button>
+        </div>
+      </div>
+
+      <!-- Confirmed surgery -->
+      <div class="appt-card">
+        <div class="appt-card-date">
+          <div class="acd-month">Mar</div>
+          <div class="acd-day">7</div>
+          <div class="acd-year">2026</div>
+        </div>
+        <div class="appt-card-divider"></div>
+        <div class="appt-card-info">
+          <div class="aci-time">Fri · 11:00 AM – 1:00 PM</div>
+          <div class="aci-pet">🐶 Noodles</div>
+          <div class="aci-service"><span class="svc-surgery">Surgery Consult</span></div>
+        </div>
+        <div class="appt-status status-confirmed" style="align-self:flex-start">Confirmed</div>
+        <div class="appt-card-actions">
+          <button class="btn btn-outline" onclick="openModal('reschedule-modal')">Reschedule</button>
+          <button class="btn btn-danger">Cancel</button>
+        </div>
+      </div>
+
+      <!-- Completed -->
+      <div class="appt-card" style="opacity:0.75">
+        <div class="appt-card-date">
+          <div class="acd-month">Feb</div>
+          <div class="acd-day">10</div>
+          <div class="acd-year">2026</div>
+        </div>
+        <div class="appt-card-divider"></div>
+        <div class="appt-card-info">
+          <div class="aci-time">Tue · 10:00 AM – 10:30 AM</div>
+          <div class="aci-pet">🐕 Dumpling</div>
+          <div class="aci-service"><span class="svc-vaccination">Vaccination</span></div>
+        </div>
+        <div class="appt-status status-completed" style="align-self:flex-start">Completed</div>
+        <div class="appt-card-actions">
+          <button class="btn btn-outline" disabled style="opacity:0.4;cursor:not-allowed">Reschedule</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ─── PETS PAGE ───────────────────────────────── -->
+<div id="page-pets" class="page">
+  <div class="page-header">
+    <div class="page-header-inner">
+      <div class="page-title">My Pets</div>
+      <div class="page-subtitle">Manage your furry family members</div>
+      <div style="height:24px"></div>
+    </div>
+  </div>
+  <div class="page-content">
+    <div class="pets-grid">
+      <!-- Noodles -->
+      <div class="pet-card">
+        <div class="pet-card-header pet-header-dog">🐶</div>
+        <div class="pet-card-body">
+          <div class="pet-card-name">Noodles</div>
+          <div class="pet-card-breed">Shih Tzu · Male</div>
+          <div class="pet-card-tags">
+            <span class="tag tag-age">4 years old</span>
+            <span class="tag tag-species">Dog</span>
+            <span class="tag tag-vacc">Vaccinated ✓</span>
+          </div>
+          <div class="pet-card-actions">
+            <button class="btn btn-outline" style="flex:1">Edit</button>
+            <button class="btn btn-primary" style="flex:1" onclick="openModal('book-modal')">Book Visit</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Mochi -->
+      <div class="pet-card">
+        <div class="pet-card-header pet-header-cat">🐱</div>
+        <div class="pet-card-body">
+          <div class="pet-card-name">Mochi</div>
+          <div class="pet-card-breed">Persian · Female</div>
+          <div class="pet-card-tags">
+            <span class="tag tag-age">2 years old</span>
+            <span class="tag tag-species">Cat</span>
+            <span class="tag" style="background:#fff3e0;color:#e65100">Vaccine Due ⚠️</span>
+          </div>
+          <div class="pet-card-actions">
+            <button class="btn btn-outline" style="flex:1">Edit</button>
+            <button class="btn btn-primary" style="flex:1" onclick="openModal('book-modal')">Book Visit</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Dumpling -->
+      <div class="pet-card">
+        <div class="pet-card-header pet-header-dog">🐕</div>
+        <div class="pet-card-body">
+          <div class="pet-card-name">Dumpling</div>
+          <div class="pet-card-breed">Aspin · Male</div>
+          <div class="pet-card-tags">
+            <span class="tag tag-age">1 year old</span>
+            <span class="tag tag-species">Dog</span>
+            <span class="tag tag-vacc">Vaccinated ✓</span>
+          </div>
+          <div class="pet-card-actions">
+            <button class="btn btn-outline" style="flex:1">Edit</button>
+            <button class="btn btn-primary" style="flex:1" onclick="openModal('book-modal')">Book Visit</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Add new -->
+      <div class="pet-add-card" onclick="openModal('pet-modal')">
+        <div class="plus">🐾</div>
+        <strong>Add a New Pet</strong>
+        <p>Register a pet to start booking appointments</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ─── PROFILE PAGE ─────────────────────────── -->
+<div id="page-profile" class="page">
+  <div class="page-header">
+    <div class="page-header-inner">
+      <div class="page-title">Profile</div>
+      <div class="page-subtitle">Manage your account details</div>
+      <div style="height:24px"></div>
+    </div>
+  </div>
+  <div class="page-content">
+    <div class="profile-grid">
+      <div>
+        <div class="profile-card">
+          <div class="profile-avatar" id="profile-avatar">GE</div>
+          <div class="profile-name" id="profile-name">Loading...</div>
+          <div class="profile-role" id="profile-role">Pet Owner · Active</div>
+          <div class="profile-stats">
+            <div class="pstat"><div class="pstat-num" id="profile-pets-count">0</div><div class="pstat-label">Pets</div></div>
+            <div class="pstat"><div class="pstat-num" id="profile-total-visits">0</div><div class="pstat-label">Visits</div></div>
+            <div class="pstat"><div class="pstat-num" id="profile-upcoming-visits">0</div><div class="pstat-label">Upcoming</div></div>
+            <div class="pstat"><div class="pstat-num" id="profile-completed-visits">0</div><div class="pstat-label">Completed</div></div>
+          </div>
+        </div>
+      </div>
+      <div>
+        <div class="card">
+          <div class="card-header" style="padding-bottom:0">
+            <div class="card-title">Personal Information</div>
+            <button class="card-action" onclick="saveProfile()">Save Changes</button>
+          </div>
+          <div class="card-body">
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label">Full Name</label>
+                <input class="form-input" id="profile-fullname" type="text" placeholder="Enter your full name">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Email Address</label>
+                <input class="form-input" id="profile-email" type="email" placeholder="your.email@example.com">
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label">Phone Number</label>
+                <input class="form-input" id="profile-phone" type="tel" placeholder="+63 917 123 4567">
+              </div>
+              <div class="form-group">
+                <label class="form-label">City</label>
+                <input class="form-input" id="profile-city" type="text" placeholder="Your city">
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Preferences / Notes</label>
+              <textarea class="form-textarea" id="profile-preferences" placeholder="Any preferences or special notes..."></textarea>
+            </div>
+          </div>
+        </div>
+        <div class="card" style="margin-top:16px">
+          <div class="card-header">
+            <div class="card-title">Security</div>
+          </div>
+          <div class="card-body">
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label">Current Password</label>
+                <input class="form-input" id="profile-current-password" type="password" placeholder="••••••••">
+              </div>
+              <div class="form-group">
+                <label class="form-label">New Password</label>
+                <input class="form-input" id="profile-new-password" type="password" placeholder="Min. 8 characters">
+              </div>
+            </div>
+            <button class="btn btn-primary" onclick="updatePassword()">Update Password</button>
+          </div>
+        </div>
+        <div class="card" style="margin-top:16px; border-color:var(--danger-border);">
+          <div class="card-header">
+            <div class="card-title" style="color:var(--danger)">Danger Zone</div>
+          </div>
+          <div class="card-body">
+            <p style="font-size:0.85rem;color:var(--text-light);margin-bottom:14px">Permanently delete your account and all associated data. This action cannot be undone.</p>
+            <button class="btn btn-danger" onclick="deleteAccount()">Delete Account</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ─── MODALS ─────────────────────────────────── -->
+
+<!-- Book Appointment Modal -->
+<div class="modal-overlay" id="book-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <div>
+        <div class="modal-title">Book an Appointment</div>
+        <div class="modal-sub">All times are Philippine Standard Time (UTC+8)</div>
+      </div>
+      <button class="modal-close" onclick="closeModal('book-modal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Select Pet</label>
+          <select class="form-select" id="book-pet-id">
+            <option value="">Loading pets...</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Service Type</label>
+          <select class="form-select" id="book-service-type" onchange="loadAvailableSlots()">
+            <option value="Routine Check-up">Routine Check-up (45 min)</option>
+            <option value="Vaccination">Vaccination (30 min)</option>
+            <option value="Surgery Consult">Surgery Consult (2 hrs)</option>
+            <option value="Emergency">Emergency (15 min)</option>
+            <option value="Grooming">Grooming (1 hr)</option>
+            <option value="Dental Care">Dental Care (1 hr)</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Preferred Date</label>
+        <input class="form-input" type="date" id="book-date" onchange="loadAvailableSlots()">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Available Time Slots</label>
+        <div id="time-slots-container" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-top: 8px;">
+          <div style="grid-column: 1 / -1; text-align: center; padding: 20px; color: var(--text-light); font-size: 0.85rem;">
+            Select a date and service type to see available slots
+          </div>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Notes (optional)</label>
+        <textarea class="form-textarea" id="book-notes" placeholder="Any special concerns or instructions…"></textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('book-modal')">Cancel</button>
+      <button class="btn btn-primary btn-lg" onclick="bookAppt()">Confirm Booking</button>
+    </div>
+  </div>
+</div>
+
+<!-- Reschedule Modal -->
+<div class="modal-overlay" id="reschedule-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <div>
+        <div class="modal-title">Reschedule Appointment</div>
+        <div class="modal-sub">🐶 Noodles · Routine Check-up</div>
+      </div>
+      <button class="modal-close" onclick="closeModal('reschedule-modal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label class="form-label">New Date & Time</label>
+        <input class="form-input" type="datetime-local" value="2026-03-10T09:00">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Available Time Slots</label>
+        <div class="slot-grid">
+          <div class="slot">8:00 AM</div>
+          <div class="slot">8:30 AM</div>
+          <div class="slot selected">9:00 AM</div>
+          <div class="slot">9:30 AM</div>
+          <div class="slot unavailable">10:00 AM</div>
+          <div class="slot">10:30 AM</div>
+          <div class="slot">11:00 AM</div>
+          <div class="slot unavailable">11:30 AM</div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('reschedule-modal')">Cancel</button>
+      <button class="btn btn-success btn-lg" onclick="rescheduleAppt()">Confirm Reschedule</button>
+    </div>
+  </div>
+</div>
+
+<!-- Add Pet Modal -->
+<div class="modal-overlay" id="pet-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <div>
+        <div class="modal-title">Add a New Pet</div>
+        <div class="modal-sub">Register your pet to start booking visits</div>
+      </div>
+      <button class="modal-close" onclick="closeModal('pet-modal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Pet Name</label>
+          <input class="form-input" id="pet-name" type="text" placeholder="e.g. Pancake" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Species</label>
+          <select class="form-select" id="pet-species" required>
+            <option value="">Select species</option>
+            <option value="dog">Dog</option>
+            <option value="cat">Cat</option>
+            <option value="rabbit">Rabbit</option>
+            <option value="bird">Bird</option>
+            <option value="other">Other</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Breed</label>
+          <input class="form-input" id="pet-breed" type="text" placeholder="e.g. Golden Retriever">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Date of Birth</label>
+          <input class="form-input" id="pet-dob" type="date" max="2026-02-28">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Sex</label>
+          <select class="form-select" id="pet-sex">
+            <option value="">Select sex</option>
+            <option value="male">Male</option>
+            <option value="female">Female</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Last Vaccination</label>
+          <input class="form-input" id="pet-vaccination" type="date" max="2026-02-28">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Medical History / Notes</label>
+        <textarea class="form-textarea" id="pet-notes" placeholder="Any known conditions, allergies, or important history…"></textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('pet-modal')">Cancel</button>
+      <button class="btn btn-primary btn-lg" onclick="addPet()">Add Pet</button>
+    </div>
+  </div>
+</div>
+
+<!-- Logout Confirmation Modal -->
+<div class="modal-overlay" id="logout-modal">
+  <div class="modal" style="max-width: 420px;">
+    <div class="modal-header">
+      <div>
+        <div class="modal-title">Confirm Logout</div>
+        <div class="modal-sub">Are you sure you want to logout?</div>
+      </div>
+      <button class="modal-close" onclick="closeModal('logout-modal')">✕</button>
+    </div>
+    <div class="modal-body" style="padding: 24px 32px;">
+      <div style="text-align: center; padding: 20px 0;">
+        <div style="font-size: 3rem; margin-bottom: 12px;">👋</div>
+        <p style="color: var(--text-light); font-size: 0.95rem; line-height: 1.6;">
+          You'll be redirected to the login page. Any unsaved changes will be lost.
+        </p>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('logout-modal')">Cancel</button>
+      <button class="btn btn-danger" onclick="confirmLogout()">Yes, Logout</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast">
+  <span id="toast-icon">✓</span>
+  <span id="toast-msg">Action completed</span>
+</div>
+
+<script>
+  // ── Page navigation ──────────────────────────────────
+  function showPage(name, tabEl) {
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    document.getElementById('page-' + name).classList.add('active');
+    if (tabEl) {
+      document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+      tabEl.classList.add('active');
+    }
+    
+    // Load data when navigating to specific pages
+    if (name === 'pets') {
+      loadUserPets();
+    } else if (name === 'appointments') {
+      loadUserAppointments();
+    } else if (name === 'profile') {
+      loadUserProfile();
+    }
+  }
+
+  // ── Appointment tab filter ────────────────────────────
+  let currentStatusFilter = 'all';
+  let currentPetFilter = 'All Pets';
+
+  function filterAppts(type, el) {
+    document.querySelectorAll('.page-tab').forEach(t => t.classList.remove('active'));
+    el.classList.add('active');
+    currentStatusFilter = type;
+    applyFilters();
+  }
+
+  function setFilter(el) {
+    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+    el.classList.add('active');
+    currentPetFilter = el.textContent;
+    applyFilters();
+  }
+
+  function applyFilters() {
+    let filtered = [...allAppointments];
+    
+    // Filter by status
+    if (currentStatusFilter !== 'all') {
+      const now = new Date();
+      if (currentStatusFilter === 'upcoming') {
+        filtered = filtered.filter(a => new Date(a.start_time) > now && a.status !== 'cancelled');
+      } else if (currentStatusFilter === 'completed') {
+        filtered = filtered.filter(a => a.status === 'completed');
+      } else if (currentStatusFilter === 'cancelled') {
+        filtered = filtered.filter(a => a.status === 'cancelled');
+      }
+    }
+    
+    // Filter by pet
+    if (currentPetFilter !== 'All Pets') {
+      filtered = filtered.filter(a => a.pet_name === currentPetFilter);
+    }
+    
+    console.log('Filtered appointments:', filtered.length, 'of', allAppointments.length);
+    renderAppointmentsPage(filtered);
+  }
+
+  // ── Slot selection ────────────────────────────────────
+  document.querySelectorAll('.slot:not(.unavailable)').forEach(slot => {
+    slot.addEventListener('click', function() {
+      const grid = this.closest('.slot-grid');
+      grid.querySelectorAll('.slot').forEach(s => s.classList.remove('selected'));
+      this.classList.add('selected');
+    });
+  });
+
+  // ── Modals ────────────────────────────────────────────
+  function openModal(id) {
+    document.getElementById(id).classList.add('open');
+    document.body.style.overflow = 'hidden';
+    
+    // Load pets when opening book modal
+    if (id === 'book-modal') {
+      loadUserPets();
+      
+      // Set default date to tomorrow
+      const tomorrow = new Date();
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      const dateStr = tomorrow.toISOString().split('T')[0];
+      document.getElementById('book-date').value = dateStr;
+      document.getElementById('book-date').min = dateStr; // Can't book in the past
+      
+      // Load available slots for default date
+      loadAvailableSlots();
+    }
+  }
+  function closeModal(id) {
+    document.getElementById(id).classList.remove('open');
+    document.body.style.overflow = '';
+  }
+  document.querySelectorAll('.modal-overlay').forEach(overlay => {
+    overlay.addEventListener('click', function(e) {
+      if (e.target === this) closeModal(this.id);
+    });
+  });
+
+  // ── Toast ─────────────────────────────────────────────
+  function showToast(msg, icon = '✓') {
+    const toast = document.getElementById('toast');
+    document.getElementById('toast-msg').textContent = msg;
+    document.getElementById('toast-icon').textContent = icon;
+    toast.classList.add('show');
+    setTimeout(() => toast.classList.remove('show'), 3200);
+  }
+
+  async function bookAppt() {
+    const token = localStorage.getItem('access_token');
+    if (!token) {
+      showToast('Please login to book appointments', '⚠️');
+      return;
+    }
+
+    // Get form values
+    const petId = document.getElementById('book-pet-id')?.value;
+    const selectedSlot = document.querySelector('.time-slot.selected');
+    const serviceType = document.getElementById('book-service-type')?.value;
+    const notes = document.getElementById('book-notes')?.value || '';
+
+    if (!petId || !selectedSlot || !serviceType) {
+      showToast('Please fill in all required fields and select a time slot', '⚠️');
+      return;
+    }
+
+    const startTime = selectedSlot.dataset.start;
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/v1/appointments`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          pet_id: petId,
+          start_time: startTime,
+          service_type: serviceType,
+          notes: notes
+        })
+      });
+
+      if (response.ok) {
+        closeModal('book-modal');
+        showToast('Appointment booked! Awaiting confirmation.', '📅');
+        loadUserAppointments(); // Reload appointments
+      } else {
+        const error = await response.json();
+        showToast(error.detail || 'Failed to book appointment', '❌');
+      }
+    } catch (error) {
+      console.error('Booking error:', error);
+      showToast('Connection error. Please try again.', '⚠️');
+    }
+  }
+
+  // Load available time slots based on date and service type
+  async function loadAvailableSlots() {
+    const date = document.getElementById('book-date')?.value;
+    const serviceType = document.getElementById('book-service-type')?.value;
+    const container = document.getElementById('time-slots-container');
+
+    if (!date || !serviceType) {
+      container.innerHTML = `
+        <div style="grid-column: 1 / -1; text-align: center; padding: 20px; color: var(--text-light); font-size: 0.85rem;">
+          Select a date and service type to see available slots
+        </div>
+      `;
+      return;
+    }
+
+    // Show loading state
+    container.innerHTML = `
+      <div style="grid-column: 1 / -1; text-align: center; padding: 20px; color: var(--text-light); font-size: 0.85rem;">
+        Loading available slots...
+      </div>
+    `;
+
+    try {
+      const response = await fetch(
+        `${API_BASE_URL}/api/v1/appointments/available-slots?date=${date}&service_type=${encodeURIComponent(serviceType)}`
+      );
+
+      if (response.ok) {
+        const slots = await response.json();
+        
+        if (slots.length === 0) {
+          container.innerHTML = `
+            <div style="grid-column: 1 / -1; text-align: center; padding: 20px; color: var(--text-light); font-size: 0.85rem;">
+              No available slots for this date. Please try another date.
+            </div>
+          `;
+          return;
+        }
+
+        // Render time slots
+        container.innerHTML = slots.map(slot => {
+          const startTime = new Date(slot.start_time);
+          const timeStr = startTime.toLocaleTimeString('en-US', { 
+            hour: 'numeric', 
+            minute: '2-digit',
+            hour12: true
+          });
+          
+          return `
+            <button class="time-slot" 
+                    data-start="${slot.start_time}" 
+                    data-end="${slot.end_time}"
+                    onclick="selectTimeSlot(this)">
+              ${timeStr}
+            </button>
+          `;
+        }).join('');
+      } else {
+        container.innerHTML = `
+          <div style="grid-column: 1 / -1; text-align: center; padding: 20px; color: var(--danger); font-size: 0.85rem;">
+            Failed to load available slots. Please try again.
+          </div>
+        `;
+      }
+    } catch (error) {
+      console.error('Error loading slots:', error);
+      container.innerHTML = `
+        <div style="grid-column: 1 / -1; text-align: center; padding: 20px; color: var(--danger); font-size: 0.85rem;">
+          Connection error. Please try again.
+        </div>
+      `;
+    }
+  }
+
+  // Select a time slot
+  function selectTimeSlot(button) {
+    // Remove selected class from all slots
+    document.querySelectorAll('.time-slot').forEach(slot => {
+      slot.classList.remove('selected');
+    });
+    
+    // Add selected class to clicked slot
+    button.classList.add('selected');
+  }
+
+  async function rescheduleAppt(appointmentId) {
+    const token = localStorage.getItem('access_token');
+    if (!token) return;
+
+    const newStartTime = document.getElementById('reschedule-start-time')?.value;
+    const newEndTime = document.getElementById('reschedule-end-time')?.value;
+
+    if (!newStartTime || !newEndTime) {
+      showToast('Please select new date and time', '⚠️');
+      return;
+    }
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/v1/appointments/${appointmentId}/reschedule`, {
+        method: 'PATCH',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          start_time: newStartTime,
+          end_time: newEndTime
+        })
+      });
+
+      if (response.ok) {
+        closeModal('reschedule-modal');
+        showToast('Appointment rescheduled successfully!', '✓');
+        loadUserAppointments(); // Reload appointments
+      } else {
+        const error = await response.json();
+        showToast(error.detail || 'Failed to reschedule', '❌');
+      }
+    } catch (error) {
+      console.error('Reschedule error:', error);
+      showToast('Connection error. Please try again.', '⚠️');
+    }
+  }
+
+  async function addPet() {
+    const token = localStorage.getItem('access_token');
+    if (!token) return;
+
+    const name = document.getElementById('pet-name')?.value?.trim();
+    const species = document.getElementById('pet-species')?.value;
+    const breed = document.getElementById('pet-breed')?.value?.trim() || null;
+    const dateOfBirth = document.getElementById('pet-dob')?.value || null;
+    const notes = document.getElementById('pet-notes')?.value?.trim() || null;
+    const lastVaccination = document.getElementById('pet-vaccination')?.value || null;
+
+    console.log('Adding pet:', { name, species, breed, dateOfBirth, notes, lastVaccination });
+
+    if (!name || !species) {
+      showToast('Please enter pet name and species', '⚠️');
+      return;
+    }
+
+    try {
+      const petData = {
+        name: name,
+        species: species,
+        breed: breed,
+        date_of_birth: dateOfBirth,
+        notes: notes
+      };
+
+      // Add last_vaccination if provided
+      if (lastVaccination) {
+        petData.last_vaccination = lastVaccination;
+      }
+
+      console.log('Sending pet data:', petData);
+
+      const response = await fetch(`${API_BASE_URL}/api/v1/pets`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(petData)
+      });
+
+      if (response.ok) {
+        const newPet = await response.json();
+        console.log('Pet created:', newPet);
+        closeModal('pet-modal');
+        showToast('Pet added to your profile!', '🐾');
+        
+        // Clear form
+        document.getElementById('pet-name').value = '';
+        document.getElementById('pet-species').value = '';
+        document.getElementById('pet-breed').value = '';
+        document.getElementById('pet-dob').value = '';
+        document.getElementById('pet-notes').value = '';
+        document.getElementById('pet-vaccination').value = '';
+        
+        // Reload pets
+        loadUserPets();
+      } else {
+        const error = await response.json();
+        console.error('Failed to add pet:', error);
+        showToast(error.detail || 'Failed to add pet', '❌');
+      }
+    } catch (error) {
+      console.error('Add pet error:', error);
+      showToast('Connection error. Please try again.', '⚠️');
+    }
+  }
+
+  // ── AUTHENTICATION & API INTEGRATION ──────────────────────────────────────
+  const API_BASE_URL = 'http://localhost:8000';
+  let currentUser = null;
+  let allAppointments = []; // Store all appointments for filtering
+  let allPets = []; // Store all pets for filtering
+
+  // Check authentication on page load
+  async function checkAuth() {
+    const token = localStorage.getItem('access_token');
+    
+    console.log('Checking authentication, token exists:', !!token);
+    
+    if (!token) {
+      console.log('No token found, redirecting to auth');
+      window.location.href = '/auth.html';
+      return;
+    }
+
+    try {
+      console.log('Verifying token with backend...');
+      const response = await fetch(`${API_BASE_URL}/api/v1/users/profile`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      console.log('Token verification response status:', response.status);
+
+      if (response.ok) {
+        currentUser = await response.json();
+        console.log('User authenticated successfully:', currentUser);
+        updateUIWithUserData();
+      } else {
+        console.error('Token verification failed, status:', response.status);
+        const errorData = await response.json().catch(() => ({}));
+        console.error('Error details:', errorData);
+        localStorage.removeItem('access_token');
+        window.location.href = '/auth.html';
+      }
+    } catch (error) {
+      console.error('Auth check failed with error:', error);
+      showToast('Connection error. Please check if backend is running.', '⚠️');
+      // Don't redirect on network error, let user try to use the app
+    }
+  }
+
+  // Update UI with user data
+  function updateUIWithUserData() {
+    if (!currentUser) return;
+
+    // Redirect staff to staff dashboard
+    if (currentUser.role === 'admin') {
+      console.log('Staff user detected, redirecting to staff dashboard');
+      window.location.replace('/staff-dashboard.html');
+      return;
+    }
+
+    // Update user name in greeting
+    const greeting = document.querySelector('.dash-greeting');
+    if (greeting) {
+      const nameParts = currentUser.full_name.split(' ');
+      const firstName = nameParts[0];
+      greeting.innerHTML = `Good morning, <em>${firstName}!</em>`;
+    }
+
+    // Update avatar
+    const avatar = document.querySelector('.avatar');
+    if (avatar) {
+      const initials = currentUser.full_name
+        .split(' ')
+        .map(n => n[0])
+        .join('')
+        .toUpperCase()
+        .substring(0, 2);
+      avatar.textContent = initials;
+    }
+
+    // Update role badge
+    const roleBadge = document.getElementById('role-badge');
+    if (roleBadge && currentUser.role) {
+      const isAdmin = currentUser.role === 'admin';
+      const roleText = isAdmin ? 'Staff' : 'Client';
+      const roleColor = isAdmin ? '#e8b87a' : '#7aaa85';
+      
+      roleBadge.innerHTML = `<div class="clinic-dot" style="background: ${roleColor}; box-shadow: 0 0 6px ${roleColor};"></div>${roleText}`;
+    }
+
+    // Update profile page
+    const profileName = document.querySelector('.profile-name');
+    if (profileName) {
+      profileName.textContent = currentUser.full_name;
+    }
+
+    const profileRole = document.querySelector('.profile-role');
+    if (profileRole) {
+      const roleText = currentUser.role === 'admin' ? 'Clinic Staff' : 'Pet Owner';
+      profileRole.textContent = roleText;
+    }
+
+    // Load user's data
+    loadUserAppointments();
+    loadUserPets();
+  }
+
+  // Load user appointments
+  async function loadUserAppointments() {
+    const token = localStorage.getItem('access_token');
+    if (!token) return;
+
+    try {
+      // Fetch both appointments and pets
+      const [appointmentsResponse, petsResponse] = await Promise.all([
+        fetch(`${API_BASE_URL}/api/v1/appointments`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        }),
+        fetch(`${API_BASE_URL}/api/v1/pets`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        })
+      ]);
+
+      if (appointmentsResponse.ok && petsResponse.ok) {
+        const appointments = await appointmentsResponse.json();
+        const pets = await petsResponse.json();
+        
+        // Store pets globally
+        allPets = pets;
+        
+        // Create a pet lookup map
+        const petMap = {};
+        pets.forEach(pet => {
+          petMap[pet.id] = pet;
+        });
+        
+        // Enrich appointments with pet data
+        const enrichedAppointments = appointments.map(appt => {
+          const pet = petMap[appt.pet_id];
+          return {
+            ...appt,
+            pet_name: pet ? pet.name : 'Unknown Pet',
+            pet_species: pet ? pet.species : 'unknown'
+          };
+        });
+        
+        // Store appointments globally for filtering
+        allAppointments = enrichedAppointments;
+        
+        console.log('Appointments loaded and enriched:', enrichedAppointments);
+        renderAppointments(enrichedAppointments); // Render in dashboard card
+        renderAppointmentsPage(enrichedAppointments); // Render on Appointments page
+        updateAppointmentStats(enrichedAppointments);
+      } else {
+        console.error('Failed to load appointments or pets');
+      }
+    } catch (error) {
+      console.error('Failed to load appointments:', error);
+    }
+  }
+
+  // Render appointments in the UI
+  function renderAppointments(appointments) {
+    // Find the Upcoming Appointments card specifically
+    const cards = document.querySelectorAll('.card');
+    let appointmentsCard = null;
+    
+    cards.forEach(card => {
+      const title = card.querySelector('.card-title');
+      if (title && title.textContent.includes('Upcoming Appointments')) {
+        appointmentsCard = card;
+      }
+    });
+    
+    if (!appointmentsCard) {
+      console.error('Upcoming Appointments card not found');
+      return;
+    }
+    
+    const container = appointmentsCard.querySelector('.card-body');
+    if (!container) {
+      console.error('Card body not found');
+      return;
+    }
+
+    // Filter upcoming appointments
+    const now = new Date();
+    const upcoming = appointments
+      .filter(a => new Date(a.start_time) > now && a.status !== 'cancelled')
+      .sort((a, b) => new Date(a.start_time) - new Date(b.start_time))
+      .slice(0, 3);
+
+    if (upcoming.length === 0) {
+      container.innerHTML = `
+        <div style="text-align: center; padding: 40px 20px; color: var(--text-light);">
+          <div style="font-size: 2rem; margin-bottom: 12px;">📅</div>
+          <div style="font-size: 0.9rem;">No upcoming appointments</div>
+          <button class="btn-action btn-confirm" style="margin-top: 16px;" onclick="openModal('book-modal')">Book Appointment</button>
+        </div>
+      `;
+      return;
+    }
+
+    container.innerHTML = upcoming.map(appt => {
+      const startTime = new Date(appt.start_time);
+      const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+      const day = dayNames[startTime.getDay()];
+      const hour = startTime.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+      
+      const statusClass = `status-${appt.status}`;
+      
+      return `
+        <div class="appt-item">
+          <div class="appt-time-block">
+            <div class="appt-time-day">${day}</div>
+            <div class="appt-time-hour">${hour.split(' ')[0]}</div>
+            <div class="appt-time-ampm">${hour.split(' ')[1]}</div>
+          </div>
+          <div class="appt-info">
+            <div class="appt-pet">🐾 ${appt.pet_name || 'Pet'}</div>
+            <div class="appt-service">${appt.service_type} • ${Math.round((new Date(appt.end_time) - new Date(appt.start_time)) / 60000)} min</div>
+          </div>
+          <div class="appt-status ${statusClass}">${appt.status}</div>
+        </div>
+      `;
+    }).join('');
+    
+    console.log('Appointments rendered successfully:', upcoming.length);
+  }
+
+  // Update appointment statistics
+  function updateAppointmentStats(appointments) {
+    const now = new Date();
+    const upcoming = appointments.filter(a => new Date(a.start_time) > now && a.status !== 'cancelled');
+    
+    // Update upcoming count
+    const upcomingEl = document.querySelector('.stat-value');
+    if (upcomingEl) {
+      upcomingEl.textContent = upcoming.length;
+    }
+
+    // Update next visit
+    const nextVisitDateEl = document.getElementById('next-visit-date');
+    const nextVisitDetailsEl = document.getElementById('next-visit-details');
+    
+    if (upcoming.length > 0) {
+      const next = upcoming.sort((a, b) => new Date(a.start_time) - new Date(b.start_time))[0];
+      const nextDate = new Date(next.start_time);
+      const dateStr = nextDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+      
+      if (nextVisitDateEl) {
+        nextVisitDateEl.textContent = dateStr;
+      }
+      if (nextVisitDetailsEl) {
+        nextVisitDetailsEl.textContent = `${next.service_type} — ${next.pet_name || 'Pet'}`;
+      }
+    } else {
+      if (nextVisitDateEl) {
+        nextVisitDateEl.textContent = '-';
+      }
+      if (nextVisitDetailsEl) {
+        nextVisitDetailsEl.textContent = 'No upcoming visits';
+      }
+    }
+
+    // Update total visits
+    const totalEl = document.getElementById('total-visits');
+    if (totalEl) {
+      totalEl.textContent = appointments.length;
+    }
+  }
+
+  // Render appointments on the Appointments page
+  function renderAppointmentsPage(appointments) {
+    const apptCards = document.querySelector('#page-appointments .appt-cards');
+    if (!apptCards) {
+      console.error('Appointments cards container not found');
+      return;
+    }
+
+    if (appointments.length === 0) {
+      apptCards.innerHTML = `
+        <div style="text-align: center; padding: 60px 20px; color: var(--text-light);">
+          <div style="font-size: 3rem; margin-bottom: 16px;">📅</div>
+          <div style="font-size: 1.1rem; margin-bottom: 8px;">No appointments yet</div>
+          <div style="font-size: 0.9rem; margin-bottom: 24px;">Book your first appointment to get started</div>
+          <button class="btn btn-primary" onclick="openModal('book-modal')">+ Book Appointment</button>
+        </div>
+      `;
+      return;
+    }
+
+    // Sort appointments by date
+    const sorted = [...appointments].sort((a, b) => new Date(b.start_time) - new Date(a.start_time));
+
+    apptCards.innerHTML = sorted.map(appt => {
+      const startTime = new Date(appt.start_time);
+      const endTime = new Date(appt.end_time);
+      const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+      
+      const month = monthNames[startTime.getMonth()];
+      const day = startTime.getDate();
+      const year = startTime.getFullYear();
+      const dayName = dayNames[startTime.getDay()];
+      const startTimeStr = startTime.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+      const endTimeStr = endTime.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+      
+      const statusClass = `status-${appt.status}`;
+      const statusText = appt.status.charAt(0).toUpperCase() + appt.status.slice(1);
+      
+      // Get pet emoji based on species
+      let petEmoji = '🐾';
+      if (appt.pet_species === 'dog') petEmoji = '🐶';
+      else if (appt.pet_species === 'cat') petEmoji = '🐱';
+      else if (appt.pet_species === 'rabbit') petEmoji = '🐰';
+      else if (appt.pet_species === 'bird') petEmoji = '🐦';
+      
+      // Service type styling
+      let serviceClass = 'svc-routine';
+      const serviceType = appt.service_type.toLowerCase();
+      if (serviceType.includes('vaccination') || serviceType.includes('vaccine')) {
+        serviceClass = 'svc-vaccination';
+      } else if (serviceType.includes('surgery') || serviceType.includes('operation')) {
+        serviceClass = 'svc-surgery';
+      } else if (serviceType.includes('emergency')) {
+        serviceClass = 'svc-emergency';
+      }
+      
+      const isCompleted = appt.status === 'completed';
+      const isCancelled = appt.status === 'cancelled';
+      const cardStyle = (isCompleted || isCancelled) ? 'opacity:0.75' : '';
+      
+      return `
+        <div class="appt-card" style="${cardStyle}">
+          <div class="appt-card-date">
+            <div class="acd-month">${month}</div>
+            <div class="acd-day">${day}</div>
+            <div class="acd-year">${year}</div>
+          </div>
+          <div class="appt-card-divider"></div>
+          <div class="appt-card-info">
+            <div class="aci-time">${dayName} · ${startTimeStr} – ${endTimeStr}</div>
+            <div class="aci-pet">${petEmoji} ${appt.pet_name || 'Pet'}</div>
+            <div class="aci-service"><span class="${serviceClass}">${appt.service_type}</span></div>
+            ${appt.notes ? `<div class="aci-notes" style="font-size:0.85rem;color:var(--text-light);margin-top:4px">${appt.notes}</div>` : ''}
+          </div>
+          <div class="appt-status ${statusClass}" style="align-self:flex-start">${statusText}</div>
+          <div class="appt-card-actions">
+            ${!isCompleted && !isCancelled ? `
+              <button class="btn btn-outline" onclick="openRescheduleModal(${appt.id})">Reschedule</button>
+              <button class="btn btn-danger" onclick="cancelAppointment(${appt.id})">Cancel</button>
+            ` : `
+              <button class="btn btn-outline" disabled style="opacity:0.4;cursor:not-allowed">Reschedule</button>
+            `}
+          </div>
+        </div>
+      `;
+    }).join('');
+
+    console.log('Appointments page rendered with', appointments.length, 'appointments');
+  }
+
+  // Load user pets
+  async function loadUserPets() {
+    const token = localStorage.getItem('access_token');
+    if (!token) return;
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/v1/pets`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (response.ok) {
+        const pets = await response.json();
+        console.log('Pets loaded:', pets);
+        renderPets(pets); // Render in dashboard card
+        renderPetsPage(pets); // Render on My Pets page
+        updatePetStats(pets);
+        updatePetFilters(pets); // Update appointment page filters
+        populatePetDropdown(pets); // Populate booking modal dropdown
+      } else {
+        console.error('Failed to load pets, status:', response.status);
+      }
+    } catch (error) {
+      console.error('Failed to load pets:', error);
+    }
+  }
+
+  // Render pets in the UI
+  function renderPets(pets) {
+    // Find the My Pets card specifically
+    const cards = document.querySelectorAll('.card');
+    let petsCard = null;
+    
+    cards.forEach(card => {
+      const title = card.querySelector('.card-title');
+      if (title && title.textContent.includes('My Pets')) {
+        petsCard = card;
+      }
+    });
+    
+    if (!petsCard) {
+      console.error('My Pets card not found');
+      return;
+    }
+    
+    const container = petsCard.querySelector('.card-body');
+    if (!container) {
+      console.error('Card body not found');
+      return;
+    }
+
+    if (pets.length === 0) {
+      container.innerHTML = `
+        <div style="text-align: center; padding: 40px 20px; color: var(--text-light);">
+          <div style="font-size: 2rem; margin-bottom: 12px;">🐾</div>
+          <div style="font-size: 0.9rem;">No pets registered</div>
+          <button class="btn-action btn-confirm" style="margin-top: 16px;" onclick="openModal('pet-modal')">Add Pet</button>
+        </div>
+      `;
+      return;
+    }
+
+    container.innerHTML = pets.slice(0, 3).map(pet => {
+      const emoji = pet.species === 'dog' ? '🐶' : pet.species === 'cat' ? '🐱' : '🐾';
+      const bgClass = pet.species === 'dog' ? 'pet-dog' : 'pet-cat';
+      
+      // Calculate age
+      let ageText = 'Unknown age';
+      if (pet.date_of_birth) {
+        const birthDate = new Date(pet.date_of_birth);
+        const ageYears = Math.floor((new Date() - birthDate) / (365.25 * 24 * 60 * 60 * 1000));
+        ageText = `${ageYears} yr${ageYears !== 1 ? 's' : ''}`;
+      }
+
+      // Vaccination status
+      let vaccStatus = 'Unknown';
+      if (pet.last_vaccination) {
+        const lastVacc = new Date(pet.last_vaccination);
+        const daysSince = Math.floor((new Date() - lastVacc) / (24 * 60 * 60 * 1000));
+        vaccStatus = daysSince < 365 ? 'Vaccinated ✓' : 'Due soon ⚠️';
+      }
+
+      return `
+        <div class="pet-mini">
+          <div class="pet-avatar ${bgClass}">${emoji}</div>
+          <div class="pet-info">
+            <div class="pet-name">${pet.name}</div>
+            <div class="pet-detail">${pet.breed || pet.species} • ${ageText}</div>
+          </div>
+          <div class="pet-chip">${vaccStatus}</div>
+        </div>
+      `;
+    }).join('');
+    
+    console.log('Pets rendered successfully:', pets.length);
+  }
+
+  // Render pets on the My Pets page
+  function renderPetsPage(pets) {
+    const petsGrid = document.querySelector('#page-pets .pets-grid');
+    if (!petsGrid) {
+      console.error('Pets grid not found');
+      return;
+    }
+
+    // Clear existing pet cards (keep only the add card)
+    petsGrid.innerHTML = '';
+
+    // Add pet cards
+    pets.forEach(pet => {
+      const emoji = pet.species === 'dog' ? '🐶' : pet.species === 'cat' ? '🐱' : pet.species === 'rabbit' ? '🐰' : pet.species === 'bird' ? '🐦' : '🐾';
+      const headerClass = pet.species === 'dog' ? 'pet-header-dog' : pet.species === 'cat' ? 'pet-header-cat' : 'pet-header-other';
+      
+      // Calculate age
+      let ageText = 'Unknown age';
+      if (pet.date_of_birth) {
+        const birthDate = new Date(pet.date_of_birth);
+        const ageYears = Math.floor((new Date() - birthDate) / (365.25 * 24 * 60 * 60 * 1000));
+        ageText = `${ageYears} year${ageYears !== 1 ? 's' : ''} old`;
+      }
+
+      // Vaccination status
+      let vaccTag = '';
+      if (pet.last_vaccination) {
+        const lastVacc = new Date(pet.last_vaccination);
+        const daysSince = Math.floor((new Date() - lastVacc) / (24 * 60 * 60 * 1000));
+        if (daysSince < 365) {
+          vaccTag = '<span class="tag tag-vacc">Vaccinated ✓</span>';
+        } else {
+          vaccTag = '<span class="tag" style="background:#fff3e0;color:#e65100">Vaccine Due ⚠️</span>';
+        }
+      }
+
+      const petCard = `
+        <div class="pet-card">
+          <div class="pet-card-header ${headerClass}">${emoji}</div>
+          <div class="pet-card-body">
+            <div class="pet-card-name">${pet.name}</div>
+            <div class="pet-card-breed">${pet.breed || pet.species} · ${pet.sex || 'Unknown'}</div>
+            <div class="pet-card-tags">
+              <span class="tag tag-age">${ageText}</span>
+              <span class="tag tag-species">${pet.species.charAt(0).toUpperCase() + pet.species.slice(1)}</span>
+              ${vaccTag}
+            </div>
+            <div class="pet-card-actions">
+              <button class="btn btn-outline" style="flex:1">Edit</button>
+              <button class="btn btn-primary" style="flex:1" onclick="openModal('book-modal')">Book Visit</button>
+            </div>
+          </div>
+        </div>
+      `;
+      petsGrid.innerHTML += petCard;
+    });
+
+    // Add the "Add new pet" card at the end
+    petsGrid.innerHTML += `
+      <div class="pet-add-card" onclick="openModal('pet-modal')">
+        <div class="plus">🐾</div>
+        <strong>Add a New Pet</strong>
+        <p>Register a pet to start booking appointments</p>
+      </div>
+    `;
+
+    console.log('My Pets page rendered with', pets.length, 'pets');
+  }
+
+  // Update pet statistics
+  function updatePetStats(pets) {
+    const petCountEl = document.querySelectorAll('.stat-value')[1];
+    if (petCountEl) {
+      petCountEl.textContent = pets.length;
+    }
+  }
+
+  // Update pet filters on appointments page
+  function updatePetFilters(pets) {
+    const petFiltersContainer = document.getElementById('pet-filters');
+    if (!petFiltersContainer) return;
+
+    // Keep the "All Pets" button and add pet-specific filters
+    petFiltersContainer.innerHTML = '<button class="filter-btn active" onclick="setFilter(this)">All Pets</button>';
+    
+    pets.forEach(pet => {
+      const btn = document.createElement('button');
+      btn.className = 'filter-btn';
+      btn.textContent = pet.name;
+      btn.onclick = function() { setFilter(this); };
+      petFiltersContainer.appendChild(btn);
+    });
+
+    console.log('Pet filters updated with', pets.length, 'pets');
+  }
+
+  // Populate pet dropdown in booking modal
+  function populatePetDropdown(pets) {
+    const petSelect = document.getElementById('book-pet-id');
+    if (!petSelect) return;
+
+    if (pets.length === 0) {
+      petSelect.innerHTML = '<option value="">No pets registered - Add a pet first</option>';
+      return;
+    }
+
+    petSelect.innerHTML = '<option value="">Select a pet...</option>';
+    
+    pets.forEach(pet => {
+      const emoji = pet.species === 'dog' ? '🐶' : pet.species === 'cat' ? '🐱' : pet.species === 'rabbit' ? '🐰' : pet.species === 'bird' ? '🐦' : '🐾';
+      const option = document.createElement('option');
+      option.value = pet.id;
+      option.textContent = `${emoji} ${pet.name}`;
+      petSelect.appendChild(option);
+    });
+
+    console.log('Pet dropdown populated with', pets.length, 'pets');
+  }
+
+  // Logout function - called from modal
+  async function confirmLogout() {
+    closeModal('logout-modal');
+    
+    const token = localStorage.getItem('access_token');
+    
+    if (token) {
+      try {
+        await fetch(`${API_BASE_URL}/api/v1/auth/logout`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+      } catch (error) {
+        console.error('Logout error:', error);
+      }
+    }
+
+    localStorage.removeItem('access_token');
+    window.location.href = '/auth.html';
+  }
+
+  // Load user profile
+  async function loadUserProfile() {
+    const token = localStorage.getItem('access_token');
+    if (!token) return;
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/v1/users/profile`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (response.ok) {
+        const user = await response.json();
+        console.log('User profile loaded:', user);
+        
+        // Update profile card
+        const initials = user.full_name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+        document.getElementById('profile-avatar').textContent = initials;
+        document.getElementById('profile-name').textContent = user.full_name;
+        
+        const roleText = user.role === 'admin' ? 'Clinic Staff' : 'Pet Owner';
+        const statusText = user.is_active ? 'Active' : 'Inactive';
+        document.getElementById('profile-role').textContent = `${roleText} · ${statusText}`;
+        
+        // Update form fields
+        document.getElementById('profile-fullname').value = user.full_name || '';
+        document.getElementById('profile-email').value = user.email || '';
+        document.getElementById('profile-phone').value = user.phone || '';
+        document.getElementById('profile-city').value = user.city || '';
+        
+        // Update preferences
+        if (user.preferences && user.preferences.notes) {
+          document.getElementById('profile-preferences').value = user.preferences.notes;
+        }
+        
+        // Update stats
+        document.getElementById('profile-pets-count').textContent = allPets.length;
+        document.getElementById('profile-total-visits').textContent = allAppointments.length;
+        
+        const now = new Date();
+        const upcoming = allAppointments.filter(a => new Date(a.start_time) > now && a.status !== 'cancelled');
+        const completed = allAppointments.filter(a => a.status === 'completed');
+        
+        document.getElementById('profile-upcoming-visits').textContent = upcoming.length;
+        document.getElementById('profile-completed-visits').textContent = completed.length;
+        
+      } else {
+        console.error('Failed to load profile');
+        showToast('Failed to load profile', '❌');
+      }
+    } catch (error) {
+      console.error('Profile load error:', error);
+      showToast('Connection error', '⚠️');
+    }
+  }
+
+  // Save profile
+  async function saveProfile() {
+    const token = localStorage.getItem('access_token');
+    if (!token) return;
+
+    const fullName = document.getElementById('profile-fullname').value.trim();
+    const email = document.getElementById('profile-email').value.trim();
+    const phone = document.getElementById('profile-phone').value.trim();
+    const city = document.getElementById('profile-city').value.trim();
+    const preferences = document.getElementById('profile-preferences').value.trim();
+
+    if (!fullName || !email) {
+      showToast('Name and email are required', '⚠️');
+      return;
+    }
+
+    try {
+      const updateData = {
+        full_name: fullName,
+        email: email,
+        phone: phone || null,
+        city: city || null,
+        preferences: preferences ? { notes: preferences } : null
+      };
+
+      const response = await fetch(`${API_BASE_URL}/api/v1/users/profile`, {
+        method: 'PATCH',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(updateData)
+      });
+
+      if (response.ok) {
+        showToast('Profile updated successfully!', '✓');
+        loadUserProfile(); // Reload to show updated data
+      } else {
+        const error = await response.json();
+        showToast(error.detail || 'Failed to update profile', '❌');
+      }
+    } catch (error) {
+      console.error('Profile update error:', error);
+      showToast('Connection error', '⚠️');
+    }
+  }
+
+  // Update password
+  async function updatePassword() {
+    const currentPassword = document.getElementById('profile-current-password').value;
+    const newPassword = document.getElementById('profile-new-password').value;
+
+    if (!currentPassword || !newPassword) {
+      showToast('Please enter both passwords', '⚠️');
+      return;
+    }
+
+    if (newPassword.length < 8) {
+      showToast('New password must be at least 8 characters', '⚠️');
+      return;
+    }
+
+    showToast('Password update not yet implemented', 'ℹ️');
+    // TODO: Implement password update endpoint
+  }
+
+  // Delete account
+  async function deleteAccount() {
+    // TODO: Create a proper modal for account deletion with password input
+    const confirmed = confirm('Are you sure you want to delete your account? This action cannot be undone.');
+    if (!confirmed) return;
+
+    const password = prompt('Please enter your password to confirm account deletion:');
+    if (!password) return;
+
+    showToast('Account deletion not yet implemented', 'ℹ️');
+    // TODO: Implement account deletion endpoint
+  }
+
+  // Add logout button click handler
+  document.addEventListener('DOMContentLoaded', () => {
+    checkAuth();
+  });
+
+</script>
+</body>
+</html>

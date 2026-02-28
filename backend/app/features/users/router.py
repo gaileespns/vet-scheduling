@@ -9,15 +9,37 @@ This module provides HTTP endpoints for:
 
 from fastapi import APIRouter, Depends, Response, status
 from sqlmodel import Session
+from typing import List
 
 from app.core.database import get_session
 from app.features.users.schemas import UserProfileResponse, UserProfileUpdate, DeleteAccountRequest
 from app.features.users.service import UserService
 from app.features.users.repository import UserRepository
-from app.common.dependencies import get_current_user
+from app.common.dependencies import get_current_user, require_role
 from app.features.users.models import User
 
 router = APIRouter(prefix="/api/v1/users", tags=["Users"])
+
+
+@router.get("", response_model=List[UserProfileResponse])
+def get_all_users(
+    current_user: User = Depends(require_role(["admin"])),
+    session: Session = Depends(get_session)
+) -> List[UserProfileResponse]:
+    """
+    Get all users (admin only).
+    
+    Returns a list of all users in the system. This endpoint is restricted
+    to admin users only and is used by staff to view pet owner information
+    when managing appointments.
+    
+    **Authorization:** Admin only
+    
+    **Response:** List of user profiles
+    """
+    user_repo = UserRepository(session)
+    users = user_repo.get_all_users()
+    return [UserProfileResponse.model_validate(user) for user in users]
 
 
 @router.get("/profile", response_model=UserProfileResponse)
