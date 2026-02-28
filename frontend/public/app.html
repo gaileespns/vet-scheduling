@@ -1701,7 +1701,10 @@
   }
 
   // ── AUTHENTICATION & API INTEGRATION ──────────────────────────────────────
-  const API_BASE_URL = 'http://localhost:8000';
+  const API_BASE_URL =
+  window.location.hostname === "localhost"
+    ? "http://localhost:8000"
+    : "https://vet-scheduling-uiob.onrender.com";
   let currentUser = null;
   let allAppointments = []; // Store all appointments for filtering
   let allPets = []; // Store all pets for filtering
